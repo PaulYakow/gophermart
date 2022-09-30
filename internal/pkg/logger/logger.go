@@ -14,11 +14,11 @@ const (
 )
 
 type ILogger interface {
-	Debug(message string, args ...any)
-	Info(message string, args ...any)
-	Warn(message string, args ...any)
-	Error(message error, args ...any)
-	Fatal(message error, args ...any)
+	Debug(message string, args ...interface{})
+	Info(message string, args ...interface{})
+	Warn(message string, args ...interface{})
+	Error(message error, args ...interface{})
+	Fatal(message error, args ...interface{})
 }
 
 type Logger struct {
@@ -57,23 +57,23 @@ func newEncoderConfig() zapcore.EncoderConfig {
 	}
 }
 
-func (l *Logger) Debug(message string, args ...any) {
+func (l *Logger) Debug(message string, args ...interface{}) {
 	l.logger.Log(zap.DebugLevel, fmt.Sprintf(message, args...))
 }
 
-func (l *Logger) Info(message string, args ...any) {
+func (l *Logger) Info(message string, args ...interface{}) {
 	l.logger.Log(zap.InfoLevel, fmt.Sprintf(message, args...))
 }
 
-func (l *Logger) Warn(message string, args ...any) {
+func (l *Logger) Warn(message string, args ...interface{}) {
 	l.logger.Log(zap.WarnLevel, fmt.Sprintf(message, args...))
 }
 
-func (l *Logger) Error(message error, args ...any) {
+func (l *Logger) Error(message error, args ...interface{}) {
 	l.logger.Log(zap.ErrorLevel, fmt.Sprintf(message.Error(), args...))
 }
 
-func (l *Logger) Fatal(message error, args ...any) {
+func (l *Logger) Fatal(message error, args ...interface{}) {
 	l.logger.Log(zap.FatalLevel, fmt.Sprintf(message.Error(), args...))
 }
 

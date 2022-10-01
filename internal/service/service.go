@@ -13,7 +13,7 @@ type (
 	}
 
 	IOrder interface {
-		Create(userId, orderNumber int) (int, error)
+		Create(userID, orderNumber int) (int, error)
 	}
 
 	Service struct {

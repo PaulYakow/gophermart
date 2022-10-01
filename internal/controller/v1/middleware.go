@@ -27,12 +27,12 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		return
 	}
 
-	userId, err := h.services.ParseToken(headerParts[1])
+	userID, err := h.services.ParseToken(headerParts[1])
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - user identity: %w", err))
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	c.Set(userCtx, userId)
+	c.Set(userCtx, userID)
 }

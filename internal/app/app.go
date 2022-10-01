@@ -6,7 +6,7 @@ import (
 	ctrl "github.com/PaulYakow/gophermart/internal/controller/v1"
 	"github.com/PaulYakow/gophermart/internal/pkg/httpserver"
 	"github.com/PaulYakow/gophermart/internal/pkg/logger"
-	v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+	postgres "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
 	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/PaulYakow/gophermart/internal/service"
 	"os"
@@ -19,12 +19,15 @@ func Run(cfg *config.Cfg) {
 	defer l.Exit()
 
 	// Postgres storage
-	db, err := v2.New(cfg.Dsn)
+	db, err := postgres.New(cfg.Dsn)
 	if err != nil {
 		l.Fatal(fmt.Errorf("app - Run - failed to initialize db: %w", err))
 	}
 
-	repos := repo.New(db.DB)
+	repos, err := repo.New(db)
+	if err != nil {
+		l.Fatal(fmt.Errorf("app - Run - repo.New: %w", err))
+	}
 
 	// Services
 	services := service.NewService(repos)

@@ -6,7 +6,9 @@ import (
 	ctrl "github.com/PaulYakow/gophermart/internal/controller/v1"
 	"github.com/PaulYakow/gophermart/internal/pkg/httpserver"
 	"github.com/PaulYakow/gophermart/internal/pkg/logger"
-	"github.com/PaulYakow/gophermart/internal/usecase"
+	v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+	"github.com/PaulYakow/gophermart/internal/repo"
+	"github.com/PaulYakow/gophermart/internal/service"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,15 +19,21 @@ func Run(cfg *config.Cfg) {
 	defer l.Exit()
 
 	// Postgres storage
+	db, err := v2.New(cfg.Dsn)
+	if err != nil {
+		l.Fatal(fmt.Errorf("app - Run - failed to initialize db: %w", err))
+	}
 
-	// Usecase
-	someUseCase := usecase.NewServerUC()
+	repos := repo.New(db.DB)
+
+	// Services
+	services := service.NewService(repos)
 
 	//HTTP server
-	handler := ctrl.NewRouter(someUseCase, l)
-	srv := httpserver.New(handler, httpserver.Address(cfg.Address))
+	handler := ctrl.NewHandler(services, l)
+	srv := httpserver.New(handler.InitRoutes(), httpserver.Address(cfg.Address))
 
-	l.Info("server - run with params: a=%s | d=%s | r=%s",
+	l.Info("app - Run - params: a=%s | d=%s | r=%s",
 		cfg.Address, cfg.Dsn, cfg.AccrualAddress)
 
 	// Waiting signal
@@ -34,14 +42,14 @@ func Run(cfg *config.Cfg) {
 
 	select {
 	case s := <-interrupt:
-		l.Info("server - Run - signal: %v", s.String())
+		l.Info("app - Run - signal: %v", s.String())
 	case err := <-srv.Notify():
-		l.Error(fmt.Errorf("server - Run - Notify: %w", err))
+		l.Error(fmt.Errorf("app - Run - Notify: %w", err))
 	}
 
 	// Shutdown
-	err := srv.Shutdown()
+	err = srv.Shutdown()
 	if err != nil {
-		l.Error(fmt.Errorf("server - Run - Shutdown: %w", err))
+		l.Error(fmt.Errorf("app - Run - Shutdown: %w", err))
 	}
 }

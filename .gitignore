@@ -36,3 +36,6 @@ log*
 
 # docker files
 pg_data
+
+# schema files
+schema

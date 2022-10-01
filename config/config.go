@@ -7,7 +7,7 @@ import (
 
 type Cfg struct {
 	Address        string `env:"RUN_ADDRESS" env-default:"localhost:8080"`
-	Dsn            string `env:"DATABASE_DSN" env-default:""`
+	Dsn            string `env:"DATABASE_URI" env-default:""`
 	AccrualAddress string `env:"ACCRUAL_SYSTEM_ADDRESS" env-default:""`
 }
 

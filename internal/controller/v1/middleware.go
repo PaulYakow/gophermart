@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
 const (
@@ -20,14 +19,7 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		return
 	}
 
-	headerParts := strings.Split(header, " ")
-	if len(headerParts) != 2 {
-		h.logger.Error(fmt.Errorf("handler - user identity: invalid auth header"))
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := h.services.ParseToken(headerParts[1])
+	userID, err := h.services.ParseToken(header)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - user identity: %w", err))
 		c.AbortWithStatus(http.StatusUnauthorized)

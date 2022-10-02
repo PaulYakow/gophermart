@@ -4,8 +4,8 @@ Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
 {
-  "login": "Abrahm",
-  "password": "sarah085"
+  "login": "Henry",
+  "password": "qwerty"
 }
 
 ### login user
@@ -21,7 +21,6 @@ Content-Type: application/json
 ### load order
 POST http://localhost:8080/api/user/orders
 Accept-Encoding: gzip, deflate, br
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjQ2ODI4NzAsImlhdCI6MTY2NDYzOTY3MCwidXNlcl9pZCI6NH0.7QqLM6FGTfUPycym4g_rV5HTSMuTEr0Le1epQkVciCo
 Content-Type: text/plain
 
 12345678903

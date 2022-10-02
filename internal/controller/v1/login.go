@@ -34,7 +34,6 @@ func (h *Handler) loginUser(c *gin.Context) {
 	}
 
 	token, err := h.services.GenerateToken(input.Login, input.Password)
-	// todo: Выловить ошибку повторяющегося логина (SQLSTATE 23505)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
 
@@ -47,7 +46,5 @@ func (h *Handler) loginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"token": token,
-	})
+	c.JSON(http.StatusOK, map[string]interface{}{"token": token})
 }

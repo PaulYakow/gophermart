@@ -33,8 +33,7 @@ func (h *Handler) registerUser(c *gin.Context) {
 		return
 	}
 
-	id, err := h.services.CreateUser(input)
-	// todo: Выловить ошибку повторяющегося логина (SQLSTATE 23505)
+	_, err := h.services.CreateUser(input)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
 
@@ -47,7 +46,19 @@ func (h *Handler) registerUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"id": id,
-	})
+	token, err := h.services.GenerateToken(input.Login, input.Password)
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
+
+		if strings.Contains(err.Error(), "no rows") {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		} else {
+			c.AbortWithStatus(http.StatusInternalServerError) // Другой возможный вариант - c.AbortWithError
+		}
+
+		return
+	}
+
+	c.Header(authorizationHeader, token)
+	c.Status(http.StatusOK)
 }

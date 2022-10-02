@@ -46,5 +46,6 @@ func (h *Handler) loginUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{"token": token})
+	c.Header(authorizationHeader, token)
+	c.Status(http.StatusOK)
 }

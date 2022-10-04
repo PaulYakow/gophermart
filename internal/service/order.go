@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"github.com/PaulYakow/gophermart/internal/repo"
 )
 
@@ -15,7 +14,7 @@ func NewOrderService(repo repo.IOrder) *OrderService {
 
 func (s *OrderService) CreateOrder(userID, orderNumber int) (int, error) {
 	if !checkOrderNumber(orderNumber) {
-		return 0, errors.New("invalid order number format")
+		return 0, ErrInvalidNumber
 	}
 
 	return s.repo.CreateOrder(userID, orderNumber)

@@ -1,7 +1,9 @@
 package v1
 
 import (
+	"errors"
 	"fmt"
+	"github.com/PaulYakow/gophermart/internal/service"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -63,7 +65,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		return
 	}
 
-	userId, ok := c.Get(userCtx)
+	userID, ok := c.Get(userCtx)
 	if !ok {
 		h.logger.Error(fmt.Errorf("handler - load order: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -79,15 +81,24 @@ func (h *Handler) loadOrder(c *gin.Context) {
 
 	orderNumber, _ := strconv.Atoi(string(body))
 
-	//h.logger.Info("user_id: %v | order number: %v", userId.(int), orderNumber)
-	_, err = h.services.CreateOrder(userId.(int), orderNumber)
+	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
+	userIDInOrder, err := h.services.CreateOrder(userID.(int), orderNumber)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - load order: failed create in storage: %w", err))
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
-		return
+		if errors.Is(err, service.ErrInvalidNumber) {
+			c.AbortWithStatus(http.StatusUnprocessableEntity)
+			return
+		}
 	}
 
-	c.Status(http.StatusAccepted)
+	if userIDInOrder == 0 {
+		c.Status(http.StatusAccepted)
+	} else if userIDInOrder == userID.(int) {
+		c.Status(http.StatusOK)
+	} else {
+		c.Status(http.StatusConflict)
+	}
+
 }
 
 func (h *Handler) getListOfOrders(c *gin.Context) {

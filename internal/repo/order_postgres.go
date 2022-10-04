@@ -1,15 +1,23 @@
 package repo
 
-import v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+import (
+	"database/sql"
+	"errors"
+	v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+)
 
 const (
+	// При отсутствии номера в базе добавляет запись, при конфликте - возвращает id пользователя
 	createOrder = `
-INSERT INTO upload_orders (user_id, number)
-VALUES ($1, $2)
-RETURNING id;
-`
-	getOrderByUser = `
-
+WITH _ AS (
+    INSERT INTO upload_orders (user_id, number)
+        VALUES ($1, $2)
+        ON CONFLICT (number)
+            DO NOTHING
+        RETURNING user_id)
+SELECT user_id
+FROM upload_orders
+WHERE number = $2;
 `
 )
 
@@ -24,11 +32,13 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 }
 
 func (r *OrderPostgres) CreateOrder(userID, orderNumber int) (int, error) {
-	var orderID int
+	var userIDOut int
 	row := r.db.QueryRow(createOrder, userID, orderNumber)
-	if err := row.Scan(&orderID); err != nil {
-		return 0, err
+	if err := row.Scan(&userIDOut); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return 0, err
+		}
 	}
 
-	return orderID, nil
+	return userIDOut, nil
 }

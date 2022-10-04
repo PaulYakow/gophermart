@@ -1,7 +1,11 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
+	"net/http"
+	"strconv"
 )
 
 /*
@@ -53,13 +57,37 @@ Content-Length: 0
 */
 
 func (h *Handler) loadOrder(c *gin.Context) {
-	//userId, ok := c.Get(userCtx)
-	//if !ok {
-	//	h.logger.Error(fmt.Errorf("handler - load order: user id not found"))
-	//	c.AbortWithStatus(http.StatusInternalServerError)
-	//	return
-	//}
+	if c.Request.Header.Get("Content-Type") != "text/plain" {
+		h.logger.Error(fmt.Errorf("handler - load order: content-type not text/plain"))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
+	userId, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - load order: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - load order: invalid request body: %w", err))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	orderNumber, _ := strconv.Atoi(string(body))
+
+	//h.logger.Info("user_id: %v | order number: %v", userId.(int), orderNumber)
+	_, err = h.services.CreateOrder(userId.(int), orderNumber)
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - load order: failed create in storage: %w", err))
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	c.Status(http.StatusAccepted)
 }
 
 func (h *Handler) getListOfOrders(c *gin.Context) {

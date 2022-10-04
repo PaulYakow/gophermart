@@ -1,7 +1,8 @@
 package entity
 
 type Balance struct {
-	User      string  `json:"-"`
-	Current   float64 `json:"current"`
-	Withdrawn float64 `json:"withdrawn"`
+	ID        int     `json:"-" db:"id"`
+	UserID    int     `json:"-" db:"user_id"`
+	Current   float32 `json:"current" db:"current"`
+	Withdrawn float32 `json:"withdrawn" db:"withdrawn"`
 }

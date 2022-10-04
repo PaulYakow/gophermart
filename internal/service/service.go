@@ -13,7 +13,7 @@ type (
 	}
 
 	IOrder interface {
-		Create(userID, orderNumber int) (int, error)
+		CreateOrder(userID, orderNumber int) (int, error)
 	}
 
 	Service struct {
@@ -25,5 +25,6 @@ type (
 func NewService(repo *repo.Repo) *Service {
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
+		IOrder:         NewOrderService(repo.IOrder),
 	}
 }

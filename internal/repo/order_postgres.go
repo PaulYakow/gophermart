@@ -14,8 +14,8 @@ const (
 	// При отсутствии номера в базе добавляет запись, при конфликте - возвращает id пользователя
 	createOrder = `
 WITH _ AS (
-    INSERT INTO upload_orders (user_id, number)
-        VALUES ($1, $2)
+    INSERT INTO upload_orders (user_id, number, status)
+        VALUES ($1, $2, 'NEW')
         ON CONFLICT (number)
             DO NOTHING
         RETURNING user_id)

@@ -3,12 +3,12 @@ package entity
 import "time"
 
 type UploadOrder struct {
-	ID         int       `json:"-" db:"id"`
-	UserID     int       `json:"-" db:"user_id"`
-	Number     int       `json:"number" db:"number"`
-	Status     string    `json:"status" db:"status"`
-	Accrual    float32   `json:"accrual" db:"accrual"`
-	UploadedAt time.Time `json:"uploaded_at" db:"created_at"`
+	ID         int         `json:"-" db:"id"`
+	UserID     int         `json:"-" db:"user_id"`
+	Number     int         `json:"number" db:"number"`
+	Status     NullString  `json:"status,omitempty" db:"status,omitempty"`
+	Accrual    NullFloat32 `json:"accrual,omitempty" db:"accrual,omitempty"`
+	UploadedAt time.Time   `json:"uploaded_at,omitempty" db:"created_at,omitempty"`
 }
 
 type WithdrawOrder struct {

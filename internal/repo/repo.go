@@ -50,13 +50,14 @@ type (
 		GetUser(login, password string) (entity.User, error)
 	}
 
-	IOrder interface {
-		CreateOrder(userID, orderNumber int) (int, error)
+	IUploadOrder interface {
+		CreateUploadedOrder(userID, orderNumber int) (int, error)
+		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
 	}
 
 	Repo struct {
 		IAuthorization
-		IOrder
+		IUploadOrder
 	}
 )
 
@@ -71,6 +72,6 @@ func New(db *v2.Postgre) (*Repo, error) {
 
 	return &Repo{
 		IAuthorization: NewAuthPostgres(db),
-		IOrder:         NewOrderPostgres(db),
+		IUploadOrder:   NewOrderPostgres(db),
 	}, nil
 }

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/PaulYakow/gophermart/internal/service"
@@ -60,14 +61,14 @@ Content-Length: 0
 
 func (h *Handler) loadOrder(c *gin.Context) {
 	if c.Request.Header.Get("Content-Type") != "text/plain" {
-		h.logger.Error(fmt.Errorf("handler - load order: content-type not text/plain"))
+		h.logger.Error(fmt.Errorf("handler - upload order: content-type not text/plain"))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	userID, ok := c.Get(userCtx)
 	if !ok {
-		h.logger.Error(fmt.Errorf("handler - load order: user id not found"))
+		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -82,9 +83,9 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	orderNumber, _ := strconv.Atoi(string(body))
 
 	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
-	userIDInOrder, err := h.services.CreateOrder(userID.(int), orderNumber)
+	userIDInOrder, err := h.services.CreateUploadedOrder(userID.(int), orderNumber)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - load order: failed create in storage: %w", err))
+		h.logger.Error(fmt.Errorf("handler - upload order: failed create in storage: %w", err))
 		if errors.Is(err, service.ErrInvalidNumber) {
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
 			return
@@ -92,15 +93,35 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	}
 
 	if userIDInOrder == 0 {
+		h.logger.Info("handler - upload order: order accepted")
 		c.Status(http.StatusAccepted)
 	} else if userIDInOrder == userID.(int) {
+		h.logger.Info("handler - upload order: order has already been loaded by this user")
 		c.Status(http.StatusOK)
 	} else {
+		h.logger.Info("handler - upload order: order has already been loaded by another user")
 		c.Status(http.StatusConflict)
 	}
 
 }
 
 func (h *Handler) getListOfOrders(c *gin.Context) {
+	userID, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	data, err := h.services.GetUploadedOrders(ctx, userID.(int))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - get uploaded orders: invalid request body: %w", err))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, data)
 }

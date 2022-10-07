@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/PaulYakow/gophermart/internal/entity"
 	"github.com/PaulYakow/gophermart/internal/repo"
 )
@@ -12,19 +13,20 @@ type (
 		ParseToken(token string) (int, error)
 	}
 
-	IOrder interface {
-		CreateOrder(userID, orderNumber int) (int, error)
+	IUploadOrder interface {
+		CreateUploadedOrder(userID, orderNumber int) (int, error)
+		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
 	}
 
 	Service struct {
 		IAuthorization
-		IOrder
+		IUploadOrder
 	}
 )
 
 func NewService(repo *repo.Repo) *Service {
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
-		IOrder:         NewOrderService(repo.IOrder),
+		IUploadOrder:   NewOrderService(repo.IUploadOrder),
 	}
 }

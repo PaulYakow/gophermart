@@ -38,6 +38,7 @@ func (h *Handler) registerUser(c *gin.Context) {
 		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
 
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
+			// todo: Переделать на проверку ошибки
 			c.AbortWithStatus(http.StatusConflict)
 		} else {
 			c.AbortWithStatus(http.StatusInternalServerError) // Другой возможный вариант - c.AbortWithError

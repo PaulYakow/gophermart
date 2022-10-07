@@ -1,23 +1,29 @@
 package service
 
 import (
+	"context"
+	"github.com/PaulYakow/gophermart/internal/entity"
 	"github.com/PaulYakow/gophermart/internal/repo"
 )
 
 type OrderService struct {
-	repo repo.IOrder
+	repo repo.IUploadOrder
 }
 
-func NewOrderService(repo repo.IOrder) *OrderService {
+func NewOrderService(repo repo.IUploadOrder) *OrderService {
 	return &OrderService{repo: repo}
 }
 
-func (s *OrderService) CreateOrder(userID, orderNumber int) (int, error) {
+func (s *OrderService) CreateUploadedOrder(userID, orderNumber int) (int, error) {
 	if !checkOrderNumber(orderNumber) {
 		return 0, ErrInvalidNumber
 	}
 
-	return s.repo.CreateOrder(userID, orderNumber)
+	return s.repo.CreateUploadedOrder(userID, orderNumber)
+}
+
+func (s *OrderService) GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error) {
+	return s.repo.GetUploadedOrders(ctx, userID)
 }
 
 func checkOrderNumber(orderNumber int) bool {

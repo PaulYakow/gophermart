@@ -14,8 +14,8 @@ Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
 {
-  "login": "Henry",
-  "password": "qwerty"
+  "login": "Abrahm",
+  "password": "sarah085"
 }
 
 ### load order
@@ -25,3 +25,7 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjQ5MjgyNzEsImlh
 Content-Type: text/plain
 
 9278923470
+
+### get orders
+GET http://localhost:8080/api/user/orders
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjUxOTQzODIsImlhdCI6MTY2NTE1MTE4MiwidXNlcl9pZCI6NH0.L6emPCWmv2GYyxMRZy36v7rsbRON52gZYRpyg45E7zA

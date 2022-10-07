@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS upload_orders
 (
     id          SERIAL PRIMARY KEY,
     user_id		SERIAL,
-    number      BIGINT UNIQUE,
-    status      VARCHAR(255),
+    number      VARCHAR(100) UNIQUE,
+    status      VARCHAR(100),
     accrual     REAL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -51,7 +51,7 @@ type (
 	}
 
 	IUploadOrder interface {
-		CreateUploadedOrder(userID, orderNumber int) (int, error)
+		CreateUploadedOrder(userID int, orderNumber string) (int, error)
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
 	}
 

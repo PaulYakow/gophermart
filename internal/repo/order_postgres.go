@@ -41,7 +41,7 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 	return &OrderPostgres{db: db}
 }
 
-func (r *OrderPostgres) CreateUploadedOrder(userID, orderNumber int) (int, error) {
+func (r *OrderPostgres) CreateUploadedOrder(userID int, orderNumber string) (int, error) {
 	var userIDOut int
 	row := r.db.QueryRow(createOrder, userID, orderNumber)
 	if err := row.Scan(&userIDOut); err != nil {

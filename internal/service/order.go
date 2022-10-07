@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/PaulYakow/gophermart/internal/entity"
 	"github.com/PaulYakow/gophermart/internal/repo"
+	"strconv"
 )
 
 type OrderService struct {
@@ -19,7 +20,7 @@ func (s *OrderService) CreateUploadedOrder(userID, orderNumber int) (int, error)
 		return 0, ErrInvalidNumber
 	}
 
-	return s.repo.CreateUploadedOrder(userID, orderNumber)
+	return s.repo.CreateUploadedOrder(userID, strconv.Itoa(orderNumber))
 }
 
 func (s *OrderService) GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error) {

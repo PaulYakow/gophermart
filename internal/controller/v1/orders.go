@@ -66,13 +66,6 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		return
 	}
 
-	userID, ok := c.Get(userCtx)
-	if !ok {
-		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - load order: invalid request body: %w", err))
@@ -80,7 +73,19 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		return
 	}
 
-	orderNumber, _ := strconv.Atoi(string(body))
+	userID, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	orderNumber, err := strconv.Atoi(string(body))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - load order: cannot convert data in request body: %w", err))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
 	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
 	userIDInOrder, err := h.services.CreateUploadedOrder(userID.(int), orderNumber)
@@ -90,6 +95,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnprocessableEntity)
 			return
 		}
+		return
 	}
 
 	if userIDInOrder == 0 {

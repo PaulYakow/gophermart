@@ -8,7 +8,7 @@ import (
 type NullString string
 type NullFloat32 float32
 
-func (s *NullString) Scan(value any) error {
+func (s *NullString) Scan(value interface{}) error {
 	if value == nil {
 		*s = ""
 		return nil
@@ -31,7 +31,7 @@ func (s NullString) Value() (driver.Value, error) {
 	return string(s), nil
 }
 
-func (f *NullFloat32) Scan(value any) error {
+func (f *NullFloat32) Scan(value interface{}) error {
 	if value == nil {
 		*f = 0.0
 		return nil

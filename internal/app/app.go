@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"github.com/PaulYakow/gophermart/config"
 	ctrl "github.com/PaulYakow/gophermart/internal/controller/v1"
@@ -19,18 +20,22 @@ func Run(cfg *config.Cfg) {
 	defer l.Exit()
 
 	// Postgres storage
-	db, err := postgres.New(cfg.Dsn)
+	pg, err := postgres.New(cfg.Dsn)
 	if err != nil {
 		l.Fatal(fmt.Errorf("app - Run - failed to initialize db: %w", err))
 	}
+	defer pg.Close()
 
-	repos, err := repo.New(db)
+	repos, err := repo.New(pg)
 	if err != nil {
 		l.Fatal(fmt.Errorf("app - Run - repo.New: %w", err))
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	// Services
-	services := service.NewService(repos)
+	endpoint := "http://" + cfg.AccrualAddress + "/api/orders"
+	services := service.NewService(repos, endpoint)
+	go services.Polling.Run(ctx)
 
 	//HTTP server
 	handler := ctrl.NewHandler(services, l)
@@ -51,6 +56,7 @@ func Run(cfg *config.Cfg) {
 	}
 
 	// Shutdown
+	cancel()
 	err = srv.Shutdown()
 	if err != nil {
 		l.Error(fmt.Errorf("app - Run - Shutdown: %w", err))

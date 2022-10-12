@@ -101,6 +101,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	if userIDInOrder == 0 {
 		h.logger.Info("handler - upload order: order accepted")
 		c.Status(http.StatusAccepted)
+		h.services.Polling.AddToPoll(strconv.Itoa(orderNumber))
 	} else if userIDInOrder == userID.(int) {
 		h.logger.Info("handler - upload order: order has already been loaded by this user")
 		c.Status(http.StatusOK)
@@ -108,7 +109,6 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		h.logger.Info("handler - upload order: order has already been loaded by another user")
 		c.Status(http.StatusConflict)
 	}
-
 }
 
 func (h *Handler) getListOfOrders(c *gin.Context) {

@@ -12,16 +12,16 @@ const schema = `
 CREATE TABLE IF NOT EXISTS users
 (
     id            SERIAL PRIMARY KEY,
-    login         VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL
+    login         VARCHAR NOT NULL UNIQUE,
+    password_hash VARCHAR NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS upload_orders
 (
     id          SERIAL PRIMARY KEY,
-    user_id		SERIAL,
-    number      VARCHAR(100) UNIQUE,
-    status      VARCHAR(100),
+    user_id		INT NOT NULL,
+    number      VARCHAR UNIQUE,
+    status      VARCHAR,
     accrual     REAL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS upload_orders
 CREATE TABLE IF NOT EXISTS balance
 (
     id          SERIAL PRIMARY KEY,
-    user_id		SERIAL,
+    user_id		INT NOT NULL,
     current     REAL,
     withdrawn	REAL
 );
@@ -37,11 +37,19 @@ CREATE TABLE IF NOT EXISTS balance
 CREATE TABLE IF NOT EXISTS withdraw_orders
 (
     id          SERIAL PRIMARY KEY,
-    user_id		SERIAL,
-    number      BIGINT UNIQUE,
+    user_id		INT NOT NULL,
+    number      VARCHAR UNIQUE,
     sum			REAL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE upload_orders ADD FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE balance ADD FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE withdraw_orders ADD FOREIGN KEY (user_id) REFERENCES users (id);
+
+CREATE INDEX ON upload_orders (user_id);
+CREATE INDEX ON balance (user_id);
+CREATE INDEX ON withdraw_orders (user_id);
 `
 
 type (
@@ -53,11 +61,19 @@ type (
 	IUploadOrder interface {
 		CreateUploadedOrder(userID int, orderNumber string) (int, error)
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
+		UpdateUploadedOrder(number string, status string, accrual float32) error
 	}
 
+	IBalance interface {
+		CreateBalance(userID int) error
+		UpdateBalance(userID int, sum float32) error
+	}
+
+	// todo: add mutex
 	Repo struct {
 		IAuthorization
 		IUploadOrder
+		IBalance
 	}
 )
 
@@ -73,5 +89,6 @@ func New(db *v2.Postgre) (*Repo, error) {
 	return &Repo{
 		IAuthorization: NewAuthPostgres(db),
 		IUploadOrder:   NewOrderPostgres(db),
+		IBalance:       NewBalancePostgres(db),
 	}, nil
 }

@@ -21,12 +21,15 @@ type (
 	Service struct {
 		IAuthorization
 		IUploadOrder
+
+		Polling *PollService
 	}
 )
 
-func NewService(repo *repo.Repo) *Service {
+func NewService(repo *repo.Repo, pollingAddress string) *Service {
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
 		IUploadOrder:   NewOrderService(repo.IUploadOrder),
+		Polling:        NewPollService(repo.IUploadOrder, pollingAddress),
 	}
 }

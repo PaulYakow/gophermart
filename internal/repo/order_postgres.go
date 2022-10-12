@@ -12,7 +12,7 @@ import (
 
 const (
 	// При отсутствии номера в базе добавляет запись, при конфликте - возвращает id пользователя
-	createOrder = `
+	createUploadedOrder = `
 WITH _ AS (
     INSERT INTO upload_orders (user_id, number, status)
         VALUES ($1, $2, 'NEW')
@@ -23,11 +23,17 @@ SELECT user_id
 FROM upload_orders
 WHERE number = $2;
 `
-	getUploadOrderByUser = `
+	getUploadedOrderByUser = `
 SELECT number, status, accrual, created_at
     FROM upload_orders
 WHERE user_id = $1
 ORDER BY created_at DESC;
+`
+	updateUploadedOrder = `
+UPDATE upload_orders
+SET status = $2,
+    accrual = $3
+WHERE number = $1;
 `
 )
 
@@ -43,7 +49,7 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 
 func (r *OrderPostgres) CreateUploadedOrder(userID int, orderNumber string) (int, error) {
 	var userIDOut int
-	row := r.db.QueryRow(createOrder, userID, orderNumber)
+	row := r.db.QueryRow(createUploadedOrder, userID, orderNumber)
 	if err := row.Scan(&userIDOut); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return 0, err
@@ -59,9 +65,19 @@ func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]en
 	ctxInner, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if err := r.db.SelectContext(ctxInner, &result, getUploadOrderByUser, userID); err != nil {
+	if err := r.db.SelectContext(ctxInner, &result, getUploadedOrderByUser, userID); err != nil {
 		return nil, fmt.Errorf("repo - get upload orders by user: %w", err)
 	}
 
 	return result, nil
+}
+
+func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrual float32) error {
+	result, err := r.db.Exec(updateUploadedOrder, number, status, accrual)
+	if err != nil {
+		return fmt.Errorf("repo - update upload order: %w", err)
+	}
+
+	fmt.Println("repo - update upload order success: ", result)
+	return nil
 }

@@ -12,13 +12,8 @@ const (
 INSERT INTO balance (user_id, current, withdrawn)
 VALUES ($1, 0, 0);
 `
-	getCurrentBalanceByUser = `
-SELECT current
-FROM balance
-WHERE user_id = $1;
-`
 	getBalanceByUser = `
-SELECT user_id, current, withdrawn
+SELECT current, withdrawn
 FROM balance
 WHERE user_id = $1;
 `
@@ -51,6 +46,6 @@ func NewBalancePostgres(db *v2.Postgre) *BalancePostgres {
 
 func (r *BalancePostgres) GetBalance(ctx context.Context, userID int) (entity.Balance, error) {
 	var balance entity.Balance
-	err := r.db.GetContext(ctx, &balance, getCurrentBalanceByUser, userID)
+	err := r.db.GetContext(ctx, &balance, getBalanceByUser, userID)
 	return balance, err
 }

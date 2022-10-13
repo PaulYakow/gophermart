@@ -18,10 +18,6 @@ func (s BalanceService) GetBalance(ctx context.Context, userID int) (entity.Bala
 	return s.repo.GetBalance(ctx, userID)
 }
 
-func (s BalanceService) UpdateCurrentBalance(userID int, sum float32) error {
-	return s.repo.UpdateCurrentBalance(userID, sum)
-}
-
-func (s BalanceService) UpdateWithdrawBalance(userID int, sum float32) error {
-	return s.repo.UpdateWithdrawBalance(userID, sum)
+func (s BalanceService) UpdateWithdrawBalance(userID, orderNumber int, sum float32) error {
+	return s.repo.UpdateWithdrawBalance(userID, orderNumber, sum)
 }

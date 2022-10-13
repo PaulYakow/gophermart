@@ -20,13 +20,13 @@ type PollResult struct {
 }
 
 type PollService struct {
-	repo       repo.IUploadOrder
+	repo       repo.IOrder
 	pool       *workerpool.Pool
 	httpclient *req.Client
 	endpoint   string
 }
 
-func NewPollService(repo repo.IUploadOrder, endpoint string) *PollService {
+func NewPollService(repo repo.IOrder, endpoint string) *PollService {
 	client := req.C().
 		SetTimeout(1 * time.Second).
 		SetCommonRetryCount(10).

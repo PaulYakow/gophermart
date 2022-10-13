@@ -69,22 +69,22 @@ type (
 		GetUser(login, password string) (entity.User, error)
 	}
 
-	IUploadOrder interface {
+	IOrder interface {
 		CreateUploadedOrder(userID int, orderNumber string) (int, error)
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
 		UpdateUploadedOrder(number string, status string, accrual float32) error
+		GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error)
 	}
 
 	IBalance interface {
 		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
-		UpdateCurrentBalance(userID int, sum float32) error
-		UpdateWithdrawBalance(userID int, sum float32) error
+		UpdateWithdrawBalance(userID, orderNumber int, sum float32) error
 	}
 
 	// todo: add mutex
 	Repo struct {
 		IAuthorization
-		IUploadOrder
+		IOrder
 		IBalance
 	}
 )
@@ -100,7 +100,7 @@ func New(db *v2.Postgre) (*Repo, error) {
 
 	return &Repo{
 		IAuthorization: NewAuthPostgres(db),
-		IUploadOrder:   NewOrderPostgres(db),
+		IOrder:         NewOrderPostgres(db),
 		IBalance:       NewBalancePostgres(db),
 	}, nil
 }

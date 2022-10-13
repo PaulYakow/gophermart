@@ -1,6 +1,11 @@
 package v1
 
-import "github.com/gin-gonic/gin"
+import (
+	"context"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 /*
 GET /api/user/withdrawals HTTP/1.1
@@ -28,5 +33,22 @@ Content-Length: 0
 */
 
 func (h *Handler) withdrawInfo(c *gin.Context) {
+	userID, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	withdrawOrders, err := h.services.GetWithdrawOrders(ctx, userID.(int))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - get uploaded orders: invalid request body: %w", err))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, withdrawOrders)
 }

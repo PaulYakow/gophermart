@@ -13,20 +13,20 @@ type (
 		ParseToken(token string) (int, error)
 	}
 
-	IUploadOrder interface {
+	IOrder interface {
 		CreateUploadedOrder(userID, orderNumber int) (int, error)
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
+		GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error)
 	}
 
 	IBalance interface {
 		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
-		UpdateCurrentBalance(userID int, sum float32) error
-		UpdateWithdrawBalance(userID int, sum float32) error
+		UpdateWithdrawBalance(userID, orderNumber int, sum float32) error
 	}
 
 	Service struct {
 		IAuthorization
-		IUploadOrder
+		IOrder
 		IBalance
 
 		Polling *PollService
@@ -38,8 +38,8 @@ func NewService(repo *repo.Repo, pollingAddress string) *Service {
 	// todo: при рестарте сервиса реализовать перезапуск опроса тех заказов, статус которых не окончательный
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
-		IUploadOrder:   NewOrderService(repo.IUploadOrder),
+		IOrder:         NewOrderService(repo.IOrder),
 		IBalance:       NewBalanceService(repo.IBalance),
-		Polling:        NewPollService(repo.IUploadOrder, pollingAddress),
+		Polling:        NewPollService(repo.IOrder, pollingAddress),
 	}
 }

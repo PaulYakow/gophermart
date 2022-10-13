@@ -24,12 +24,38 @@ Accept-Encoding: gzip, deflate, br
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
 Content-Type: text/plain
 
-346436439
+9278923470
 
-### get orders
+### get uploaded orders
 GET http://localhost:8081/api/user/orders
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
 
 ### get balance
 GET http://localhost:8081/api/user/balance
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+
+### withdraw request #1
+POST http://localhost:8081/api/user/balance/withdraw
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "order": "346436439",
+  "sum": 100
+}
+
+### withdraw request #2
+POST http://localhost:8081/api/user/balance/withdraw
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "order": "12345678903",
+  "sum": 270
+}
+
+### get withdraw orders
+GET http://localhost:8081/api/user/withdrawals
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s

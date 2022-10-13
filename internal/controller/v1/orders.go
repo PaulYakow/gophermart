@@ -2,9 +2,7 @@ package v1
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/PaulYakow/gophermart/internal/service"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -68,10 +66,22 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		return
 	}
 
-	body, err := io.ReadAll(c.Request.Body)
+	number, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - load order: invalid request body: %w", err))
 		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	orderNumber, err := strconv.Atoi(string(number))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - load order: cannot convert data in request body: %w", err))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	if !checkOrderNumber(orderNumber) {
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -82,21 +92,10 @@ func (h *Handler) loadOrder(c *gin.Context) {
 		return
 	}
 
-	orderNumber, err := strconv.Atoi(string(body))
-	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - load order: cannot convert data in request body: %w", err))
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-	}
-
 	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
 	userIDInOrder, err := h.services.CreateUploadedOrder(userID.(int), orderNumber)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - upload order: failed create in storage: %w", err))
-		if errors.Is(err, service.ErrInvalidNumber) {
-			c.AbortWithStatus(http.StatusUnprocessableEntity)
-			return
-		}
 		return
 	}
 
@@ -125,12 +124,33 @@ func (h *Handler) getListOfOrders(c *gin.Context) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	data, err := h.services.GetUploadedOrders(ctx, userID.(int))
+	uploadedOrders, err := h.services.GetUploadedOrders(ctx, userID.(int))
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - get uploaded orders: invalid request body: %w", err))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, uploadedOrders)
+}
+
+func checkOrderNumber(orderNumber int) bool {
+	var luhn int
+	number := orderNumber / 10
+
+	for i := 0; number > 0; i++ {
+		cur := number % 10
+
+		if i%2 == 0 {
+			cur = cur * 2
+			if cur > 9 {
+				cur = cur%10 + cur/10
+			}
+		}
+
+		luhn += cur
+		number = number / 10
+	}
+
+	return (orderNumber%10+luhn%10)%10 == 0
 }

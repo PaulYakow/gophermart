@@ -25,7 +25,7 @@ SELECT user_id
 FROM upload_orders
 WHERE number = $2;
 `
-	getUploadedOrderByUser = `
+	getUploadedOrdersByUser = `
 SELECT number, COALESCE(status, '') AS status, COALESCE(accrual, 0) as accrual, created_at
     FROM upload_orders
 WHERE user_id = $1
@@ -37,11 +37,21 @@ SET status = $2,
     accrual = $3
 WHERE number = $1;
 `
+	createWithdrawnOrder = `
+INSERT INTO withdraw_orders (user_id, number, sum)
+VALUES ($1, $2, $3);
+`
+	getWithdrawOrdersByUser = `
+SELECT number, sum, created_at
+    FROM withdraw_orders
+WHERE user_id = $1
+ORDER BY created_at DESC;
+`
 )
 
 var (
 	stmtUpdateUploadedOrder *sqlx.Stmt
-	stmtUpdateBalance       *sqlx.Stmt
+	stmtCreateWithdrawOrder *sqlx.Stmt
 )
 
 type OrderPostgres struct {
@@ -55,9 +65,9 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 		log.Printf("repo - NewOrderPostgres stmtUpdateUploadedOrder prepare: %v", err)
 	}
 
-	stmtUpdateBalance, err = db.Preparex(updateBalance)
+	stmtUpdateCurrentBalance, err = db.Preparex(updateCurrentBalance)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtUpdateBalance prepare: %v", err)
+		log.Printf("repo - NewOrderPostgres stmtUpdateCurrentBalance prepare: %v", err)
 	}
 
 	return &OrderPostgres{db: db}
@@ -81,7 +91,7 @@ func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]en
 	ctxInner, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if err := r.db.SelectContext(ctxInner, &result, getUploadedOrderByUser, userID); err != nil {
+	if err := r.db.SelectContext(ctxInner, &result, getUploadedOrdersByUser, userID); err != nil {
 		return nil, fmt.Errorf("repo - get upload orders by user: %w", err)
 	}
 
@@ -89,11 +99,6 @@ func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]en
 }
 
 func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrual float32) error {
-	//_, err := r.db.Exec(updateUploadedOrder, number, status, accrual)
-	//if err != nil {
-	//	return fmt.Errorf("repo - update upload order: %w", err)
-	//}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -104,7 +109,7 @@ func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrua
 	defer tx.Rollback()
 
 	txStmtUpdateUploadedOrder := tx.StmtxContext(ctx, stmtUpdateUploadedOrder)
-	txStmtUpdateBalance := tx.StmtxContext(ctx, stmtUpdateBalance)
+	txStmtUpdateBalance := tx.StmtxContext(ctx, stmtUpdateCurrentBalance)
 
 	if _, err = txStmtUpdateUploadedOrder.Exec(number, status, accrual); err != nil {
 		return fmt.Errorf("repo - txStmtUpdateUploadedOrder: %w", err)
@@ -116,5 +121,18 @@ func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrua
 
 	log.Println("repo - update upload order success")
 	return tx.Commit()
+}
+
+func (r *OrderPostgres) GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error) {
+	var result []entity.WithdrawOrder
+
+	ctxInner, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	if err := r.db.SelectContext(ctxInner, &result, getWithdrawOrdersByUser, userID); err != nil {
+		return nil, fmt.Errorf("repo - get upload orders by user: %w", err)
+	}
+
+	return result, nil
 
 }

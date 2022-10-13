@@ -2,9 +2,12 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 /*
@@ -65,6 +68,49 @@ func (h *Handler) getBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, balance)
 }
 
-func (h *Handler) withdrawBalance(c *gin.Context) {
+type WithdrawRequest struct {
+	Order string  `json:"order" db:"number"`
+	Sum   float32 `json:"sum" db:"sum"`
+}
 
+func (h *Handler) withdrawBalance(c *gin.Context) {
+	var withdraw WithdrawRequest
+	if err := c.BindJSON(&withdraw); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		h.logger.Error(fmt.Errorf("handler - register withdraw: %w", err))
+		return
+	}
+
+	orderNumber, err := strconv.Atoi(string(withdraw.Order))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: cannot convert data in request body: %w", err))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	if !checkOrderNumber(orderNumber) {
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	userID, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.services.UpdateWithdrawBalance(userID.(int), orderNumber, withdraw.Sum)
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: failed create in storage: %w", err))
+
+		if errors.Is(err, repo.ErrNoFunds) {
+			c.AbortWithStatus(http.StatusPaymentRequired)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

@@ -23,6 +23,10 @@ func (s *OrderService) GetUploadedOrders(ctx context.Context, userID int) ([]ent
 	return s.repo.GetUploadedOrders(ctx, userID)
 }
 
+func (s *OrderService) CreateWithdrawOrder(userID int, orderNumber string, sum float32) error {
+	return s.repo.CreateWithdrawOrder(userID, orderNumber, sum)
+}
+
 func (s *OrderService) GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error) {
 	return s.repo.GetWithdrawOrders(ctx, userID)
 }

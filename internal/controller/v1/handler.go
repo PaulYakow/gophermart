@@ -47,7 +47,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 			auth.POST(ordersRoute, h.loadOrder)
 			auth.GET(ordersRoute, h.getListOfOrders)
 			auth.GET(balanceRoute, h.getBalance)
-			auth.POST(withdrawRoute, h.withdrawBalance)
+			auth.POST(withdrawRoute, h.withdrawOrder)
 			auth.GET(withdrawalsRoute, h.withdrawInfo)
 		}
 	}

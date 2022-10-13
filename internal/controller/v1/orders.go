@@ -2,7 +2,9 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -55,6 +57,22 @@ Content-Length: 0
 204 — нет данных для ответа.
 401 — пользователь не авторизован.
 500 — внутренняя ошибка сервера.
+---------------------------------------
+
+POST /api/user/balance/withdraw HTTP/1.1
+Content-Type: application/json
+
+{
+    "order": "2377225624",
+    "sum": 751
+}
+
+Возможные коды ответа:
+    200 — успешная обработка запроса;
+    401 — пользователь не авторизован;
+    402 — на счету недостаточно средств;
+    422 — неверный номер заказа;
+    500 — внутренняя ошибка сервера.
 */
 
 func (h *Handler) loadOrder(c *gin.Context) {
@@ -132,6 +150,48 @@ func (h *Handler) getListOfOrders(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, uploadedOrders)
+}
+
+func (h *Handler) withdrawOrder(c *gin.Context) {
+	var withdraw WithdrawRequest
+	if err := c.BindJSON(&withdraw); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		h.logger.Error(fmt.Errorf("handler - register withdraw: %w", err))
+		return
+	}
+
+	orderNumber, err := strconv.Atoi(string(withdraw.Order))
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: cannot convert data in request body: %w", err))
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	if !checkOrderNumber(orderNumber) {
+		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		return
+	}
+
+	userID, ok := c.Get(userCtx)
+	if !ok {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: user id not found"))
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.services.CreateWithdrawOrder(userID.(int), withdraw.Order, withdraw.Sum)
+	if err != nil {
+		h.logger.Error(fmt.Errorf("handler - register withdraw: failed create in storage: %w", err))
+
+		if errors.Is(err, repo.ErrNoFunds) {
+			c.AbortWithStatus(http.StatusPaymentRequired)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func checkOrderNumber(orderNumber int) bool {

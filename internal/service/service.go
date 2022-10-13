@@ -16,12 +16,13 @@ type (
 	IOrder interface {
 		CreateUploadedOrder(userID, orderNumber int) (int, error)
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
+
+		CreateWithdrawOrder(userID int, orderNumber string, sum float32) error
 		GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error)
 	}
 
 	IBalance interface {
 		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
-		UpdateWithdrawBalance(userID, orderNumber int, sum float32) error
 	}
 
 	Service struct {

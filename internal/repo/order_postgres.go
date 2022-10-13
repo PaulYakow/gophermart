@@ -70,6 +70,21 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 		log.Printf("repo - NewOrderPostgres stmtUpdateCurrentBalance prepare: %v", err)
 	}
 
+	stmtGetCurrentBalance, err = db.Preparex(getCurrentBalanceByUser)
+	if err != nil {
+		log.Printf("repo - NewOrderPostgres stmtGetCurrentBalance prepare: %v", err)
+	}
+
+	stmtCreateWithdrawOrder, err = db.Preparex(createWithdrawnOrder)
+	if err != nil {
+		log.Printf("repo - NewOrderPostgres stmtCreateWithdrawOrder prepare: %v", err)
+	}
+
+	stmtUpdateWithdrawBalance, err = db.Preparex(updateWithdrawBalance)
+	if err != nil {
+		log.Printf("repo - NewOrderPostgres stmtUpdateWithdrawBalance prepare: %v", err)
+	}
+
 	return &OrderPostgres{db: db}
 }
 
@@ -120,6 +135,41 @@ func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrua
 	}
 
 	log.Println("repo - update upload order success")
+	return tx.Commit()
+}
+
+func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum float32) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("repo - start transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	txStmtGetCurrentBalance := tx.StmtxContext(ctx, stmtGetCurrentBalance)
+	txStmtCreateWithdrawOrder := tx.StmtxContext(ctx, stmtCreateWithdrawOrder)
+	txStmtUpdateWithdrawBalance := tx.StmtxContext(ctx, stmtUpdateWithdrawBalance)
+
+	var balance entity.Balance
+	if err = txStmtGetCurrentBalance.Get(&balance, userID); err != nil {
+		return fmt.Errorf("repo - txStmtGetCurrentBalance: %w", err)
+	}
+
+	if balance.Current-sum < 0 {
+		return ErrNoFunds
+	}
+
+	if _, err = txStmtCreateWithdrawOrder.Exec(userID, orderNumber, sum); err != nil {
+		return fmt.Errorf("repo - txStmtCreateWithdrawOrder: %w", err)
+	}
+
+	if _, err = txStmtUpdateWithdrawBalance.Exec(userID, sum); err != nil {
+		return fmt.Errorf("repo - txStmtUpdateWithdrawBalance: %w", err)
+	}
+
+	log.Println("repo - update withdraw order success")
 	return tx.Commit()
 }
 

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS balance
 (
     id          SERIAL PRIMARY KEY,
     user_id		INT NOT NULL,
-    current     NUMERIC,
+    "current"     NUMERIC,
     withdrawn	NUMERIC
 );
 

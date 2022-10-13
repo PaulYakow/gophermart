@@ -18,9 +18,16 @@ type (
 		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
 	}
 
+	IBalance interface {
+		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
+		UpdateCurrentBalance(userID int, sum float32) error
+		UpdateWithdrawBalance(userID int, sum float32) error
+	}
+
 	Service struct {
 		IAuthorization
 		IUploadOrder
+		IBalance
 
 		Polling *PollService
 	}
@@ -28,9 +35,11 @@ type (
 
 func NewService(repo *repo.Repo, pollingAddress string) *Service {
 	// todo: нет возможности вести логи - пробросить сюда логгер
+	// todo: при рестарте сервиса реализовать перезапуск опроса тех заказов, статус которых не окончательный
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
 		IUploadOrder:   NewOrderService(repo.IUploadOrder),
+		IBalance:       NewBalanceService(repo.IBalance),
 		Polling:        NewPollService(repo.IUploadOrder, pollingAddress),
 	}
 }

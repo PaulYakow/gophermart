@@ -26,14 +26,14 @@ Content-Type: application/json
 */
 
 func (h *Handler) registerUser(c *gin.Context) {
-	var input entity.User
-	if err := c.BindJSON(&input); err != nil {
+	var user entity.User
+	if err := c.BindJSON(&user); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest) // Другой возможный вариант - c.AbortWithError
 		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
 		return
 	}
 
-	_, err := h.services.CreateUser(input)
+	_, err := h.services.CreateUser(user)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
 
@@ -41,20 +41,20 @@ func (h *Handler) registerUser(c *gin.Context) {
 			// todo: Переделать на проверку ошибки
 			c.AbortWithStatus(http.StatusConflict)
 		} else {
-			c.AbortWithStatus(http.StatusInternalServerError) // Другой возможный вариант - c.AbortWithError
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
 		return
 	}
 
-	token, err := h.services.GenerateToken(input.Login, input.Password)
+	token, err := h.services.GenerateToken(user.Login, user.Password)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
 
 		if strings.Contains(err.Error(), "no rows") {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		} else {
-			c.AbortWithStatus(http.StatusInternalServerError) // Другой возможный вариант - c.AbortWithError
+			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
 		return

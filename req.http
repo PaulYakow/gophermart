@@ -4,7 +4,7 @@ Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
 {
-  "login": "Henry",
+  "login": "User_0",
   "password": "qwerty"
 }
 
@@ -21,11 +21,15 @@ Content-Type: application/json
 ### load order
 POST http://localhost:8081/api/user/orders
 Accept-Encoding: gzip, deflate, br
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU2NzY4MDksImlhdCI6MTY2NTYzMzYwOSwidXNlcl9pZCI6NH0.oxGnMzbo6QPGKuEw9dqZii5adyYJcAwgsYbM4rAzXEA
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
 Content-Type: text/plain
 
-9278923470
+346436439
 
 ### get orders
 GET http://localhost:8081/api/user/orders
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU2NzY4MDksImlhdCI6MTY2NTYzMzYwOSwidXNlcl9pZCI6NH0.oxGnMzbo6QPGKuEw9dqZii5adyYJcAwgsYbM4rAzXEA
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+
+### get balance
+GET http://localhost:8081/api/user/balance
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s

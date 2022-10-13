@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/PaulYakow/gophermart/internal/entity"
 	v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+	"github.com/jmoiron/sqlx"
+	"log"
 	"time"
 )
 
@@ -37,12 +39,26 @@ WHERE number = $1;
 `
 )
 
+var (
+	stmtUpdateUploadedOrder *sqlx.Stmt
+	stmtUpdateBalance       *sqlx.Stmt
+)
+
 type OrderPostgres struct {
 	db *v2.Postgre
 }
 
 func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
-	// todo: Named stmt
+	var err error
+	stmtUpdateUploadedOrder, err = db.Preparex(updateUploadedOrder)
+	if err != nil {
+		log.Printf("repo - NewOrderPostgres stmtUpdateUploadedOrder prepare: %v", err)
+	}
+
+	stmtUpdateBalance, err = db.Preparex(updateBalance)
+	if err != nil {
+		log.Printf("repo - NewOrderPostgres stmtUpdateBalance prepare: %v", err)
+	}
 
 	return &OrderPostgres{db: db}
 }
@@ -73,11 +89,32 @@ func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]en
 }
 
 func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrual float32) error {
-	result, err := r.db.Exec(updateUploadedOrder, number, status, accrual)
+	//_, err := r.db.Exec(updateUploadedOrder, number, status, accrual)
+	//if err != nil {
+	//	return fmt.Errorf("repo - update upload order: %w", err)
+	//}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("repo - update upload order: %w", err)
+		return fmt.Errorf("repo - start transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	txStmtUpdateUploadedOrder := tx.StmtxContext(ctx, stmtUpdateUploadedOrder)
+	txStmtUpdateBalance := tx.StmtxContext(ctx, stmtUpdateBalance)
+
+	if _, err = txStmtUpdateUploadedOrder.Exec(number, status, accrual); err != nil {
+		return fmt.Errorf("repo - txStmtUpdateUploadedOrder: %w", err)
 	}
 
-	fmt.Println("repo - update upload order success: ", result)
-	return nil
+	if _, err = txStmtUpdateBalance.Exec(number, accrual); err != nil {
+		return fmt.Errorf("repo - txStmtUpdateBalance: %w", err)
+	}
+
+	log.Println("repo - update upload order success")
+	return tx.Commit()
+
 }

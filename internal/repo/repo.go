@@ -43,9 +43,20 @@ CREATE TABLE IF NOT EXISTS withdraw_orders
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE upload_orders ADD FOREIGN KEY (user_id) REFERENCES users (id);
-ALTER TABLE balance ADD FOREIGN KEY (user_id) REFERENCES users (id);
-ALTER TABLE withdraw_orders ADD FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE upload_orders
+    ADD FOREIGN KEY (user_id)
+        REFERENCES users (id)
+        ON DELETE CASCADE;
+
+ALTER TABLE balance
+    ADD FOREIGN KEY (user_id)
+        REFERENCES users (id)
+		ON DELETE CASCADE;
+
+ALTER TABLE withdraw_orders
+    ADD FOREIGN KEY (user_id)
+        REFERENCES users (id)
+		ON DELETE CASCADE;
 
 CREATE INDEX ON upload_orders (user_id);
 CREATE INDEX ON balance (user_id);
@@ -65,8 +76,9 @@ type (
 	}
 
 	IBalance interface {
-		CreateBalance(userID int) error
-		UpdateBalance(userID int, sum float32) error
+		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
+		UpdateCurrentBalance(userID int, sum float32) error
+		UpdateWithdrawBalance(userID int, sum float32) error
 	}
 
 	// todo: add mutex

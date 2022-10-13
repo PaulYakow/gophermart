@@ -24,7 +24,7 @@ FROM upload_orders
 WHERE number = $2;
 `
 	getUploadedOrderByUser = `
-SELECT number, status, accrual, created_at
+SELECT number, COALESCE(status, '') AS status, COALESCE(accrual, 0) as accrual, created_at
     FROM upload_orders
 WHERE user_id = $1
 ORDER BY created_at DESC;

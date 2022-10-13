@@ -5,7 +5,10 @@ import (
 	"fmt"
 )
 
+// Deprecated: remove in next revision
 type NullString string
+
+// Deprecated: remove in next revision
 type NullFloat32 float32
 
 func (s *NullString) Scan(value interface{}) error {

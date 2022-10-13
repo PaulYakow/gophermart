@@ -161,6 +161,7 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 		return ErrNoFunds
 	}
 
+	before := balance
 	if _, err = txStmtCreateWithdrawOrder.Exec(userID, orderNumber, sum); err != nil {
 		return fmt.Errorf("repo - txStmtCreateWithdrawOrder: %w", err)
 	}
@@ -169,7 +170,11 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 		return fmt.Errorf("repo - txStmtUpdateWithdrawBalance: %w", err)
 	}
 
-	log.Println("repo - update withdraw order success")
+	if err = txStmtGetCurrentBalance.Get(&balance, userID); err != nil {
+		return fmt.Errorf("repo - txStmtGetCurrentBalance: %w", err)
+	}
+
+	log.Println("repo - update withdraw order success: before=", before, " | after=", balance)
 	return tx.Commit()
 }
 

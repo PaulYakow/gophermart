@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS upload_orders
     user_id		INT NOT NULL,
     number      VARCHAR UNIQUE,
     status      VARCHAR,
-    accrual     REAL,
+    accrual     NUMERIC,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS balance
 (
     id          SERIAL PRIMARY KEY,
     user_id		INT NOT NULL,
-    current     REAL,
-    withdrawn	REAL
+    current     NUMERIC,
+    withdrawn	NUMERIC
 );
 
 CREATE TABLE IF NOT EXISTS withdraw_orders
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS withdraw_orders
     id          SERIAL PRIMARY KEY,
     user_id		INT NOT NULL,
     number      VARCHAR UNIQUE,
-    sum			REAL,
+    sum			NUMERIC,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

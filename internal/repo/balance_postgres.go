@@ -17,6 +17,11 @@ SELECT current
 FROM balance
 WHERE user_id = $1;
 `
+	getBalanceByUser = `
+SELECT (user_id, current, withdrawn)
+FROM balance
+WHERE user_id = $1;
+`
 	updateCurrentBalance = `
 UPDATE balance
 SET current = current + $2
@@ -31,7 +36,7 @@ WHERE user_id = $1;
 )
 
 var (
-	stmtGetCurrentBalance     *sqlx.Stmt
+	stmtGetBalance            *sqlx.Stmt
 	stmtUpdateCurrentBalance  *sqlx.Stmt
 	stmtUpdateWithdrawBalance *sqlx.Stmt
 )

@@ -70,9 +70,9 @@ func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
 		log.Printf("repo - NewOrderPostgres stmtUpdateCurrentBalance prepare: %v", err)
 	}
 
-	stmtGetCurrentBalance, err = db.Preparex(getCurrentBalanceByUser)
+	stmtGetBalance, err = db.Preparex(getBalanceByUser)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtGetCurrentBalance prepare: %v", err)
+		log.Printf("repo - NewOrderPostgres stmtGetBalance prepare: %v", err)
 	}
 
 	stmtCreateWithdrawOrder, err = db.Preparex(createWithdrawnOrder)
@@ -148,13 +148,13 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 	}
 	defer tx.Rollback()
 
-	txStmtGetCurrentBalance := tx.StmtxContext(ctx, stmtGetCurrentBalance)
+	txStmtGetBalance := tx.StmtxContext(ctx, stmtGetBalance)
 	txStmtCreateWithdrawOrder := tx.StmtxContext(ctx, stmtCreateWithdrawOrder)
 	txStmtUpdateWithdrawBalance := tx.StmtxContext(ctx, stmtUpdateWithdrawBalance)
 
 	var balance entity.Balance
-	if err = txStmtGetCurrentBalance.Get(&balance, userID); err != nil {
-		return fmt.Errorf("repo - txStmtGetCurrentBalance: %w", err)
+	if err = txStmtGetBalance.Get(&balance, userID); err != nil {
+		return fmt.Errorf("repo - txStmtGetBalance: %w", err)
 	}
 
 	if balance.Current-sum < 0 {
@@ -170,8 +170,8 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 		return fmt.Errorf("repo - txStmtUpdateWithdrawBalance: %w", err)
 	}
 
-	if err = txStmtGetCurrentBalance.Get(&balance, userID); err != nil {
-		return fmt.Errorf("repo - txStmtGetCurrentBalance: %w", err)
+	if err = txStmtGetBalance.Get(&balance, userID); err != nil {
+		return fmt.Errorf("repo - txStmtGetBalance: %w", err)
 	}
 
 	log.Println("repo - update withdraw order success: before=", before, " | after=", balance)

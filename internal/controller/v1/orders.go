@@ -60,6 +60,8 @@ Content-Length: 0
 */
 
 func (h *Handler) loadOrder(c *gin.Context) {
+	h.logger.Info("handler - request: %v", *c.Request)
+
 	if c.Request.Header.Get("Content-Type") != "text/plain" {
 		h.logger.Error(fmt.Errorf("handler - upload order: content-type not text/plain"))
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -99,9 +101,10 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	}
 
 	if userIDInOrder == 0 {
+		h.services.Polling.AddToPoll(strconv.Itoa(orderNumber))
+
 		h.logger.Info("handler - upload order: order accepted")
 		c.Status(http.StatusAccepted)
-		h.services.Polling.AddToPoll(strconv.Itoa(orderNumber))
 	} else if userIDInOrder == userID.(int) {
 		h.logger.Info("handler - upload order: order has already been loaded by this user")
 		c.Status(http.StatusOK)

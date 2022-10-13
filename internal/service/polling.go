@@ -39,7 +39,7 @@ func NewPollService(repo repo.IUploadOrder, endpoint string) *PollService {
 					}
 				}
 			}
-			return 2 * time.Second
+			return 5 * time.Second
 		}).
 		SetCommonRetryCondition(func(resp *req.Response, err error) bool {
 			if resp.Response != nil {
@@ -51,6 +51,8 @@ func NewPollService(repo repo.IUploadOrder, endpoint string) *PollService {
 						return true
 					}
 				}
+				log.Println("PollService - retry attempt: ", result)
+
 				return err != nil ||
 					resp.StatusCode == http.StatusTooManyRequests ||
 					resp.StatusCode == http.StatusNoContent ||
@@ -60,7 +62,7 @@ func NewPollService(repo repo.IUploadOrder, endpoint string) *PollService {
 		}).
 		SetCommonRetryHook(func(resp *req.Response, err error) {
 			rq := resp.Request.RawRequest
-			log.Println("Retry request:", rq.Method, rq.URL)
+			log.Println("PollService - retry request:", rq.Method, rq.URL)
 		})
 
 	return &PollService{
@@ -74,7 +76,6 @@ func NewPollService(repo repo.IUploadOrder, endpoint string) *PollService {
 func (s *PollService) Run(ctx context.Context) {
 	go s.getResults(ctx)
 	s.pool.RunBackground(ctx)
-	// todo: where is pool.Stop()???
 }
 
 func (s *PollService) AddToPoll(number string) {
@@ -86,7 +87,7 @@ func (s *PollService) AddToPoll(number string) {
 	*/
 	task := workerpool.NewTask(
 		workerpool.TaskDescriptor{
-			ID:       workerpool.TaskID(fmt.Sprintf("%s", number)),
+			ID:       workerpool.TaskID(number),
 			TType:    "",
 			Metadata: nil,
 		},
@@ -129,7 +130,6 @@ func (s *PollService) requestOrderInfo(ctx context.Context, args interface{}) (i
 	return nil, nil
 }
 
-// fixme: где-то в этой функции имеется проблема с получением результата
 func (s *PollService) getResults(ctx context.Context) {
 	defer fmt.Println("PollService - getResults exiting")
 

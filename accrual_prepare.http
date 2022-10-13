@@ -1,0 +1,55 @@
+### load mechanic
+POST http://localhost:8080/api/goods
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "match": "Bork",
+  "reward": 10,
+  "reward_type": "%"
+}
+
+### load order #1
+POST http://localhost:8080/api/orders
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "order": "9278923470",
+  "goods": [
+    {
+      "description": "Чайник Bork",
+      "price": 4300
+    }
+  ]
+}
+
+### load order #2
+POST http://localhost:8080/api/orders
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "order": "12345678903",
+  "goods": [
+    {
+      "description": "Утюг Bork",
+      "price": 2700
+    }
+  ]
+}
+
+### load order #3
+POST http://localhost:8080/api/orders
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/json
+
+{
+  "order": "346436439",
+  "goods": [
+    {
+      "description": "Пылесос Bork",
+      "price": 12170
+    }
+  ]
+}

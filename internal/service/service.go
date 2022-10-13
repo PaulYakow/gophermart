@@ -27,6 +27,7 @@ type (
 )
 
 func NewService(repo *repo.Repo, pollingAddress string) *Service {
+	// todo: нет возможности вести логи - пробросить сюда логгер
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
 		IUploadOrder:   NewOrderService(repo.IUploadOrder),

@@ -3,7 +3,8 @@ package workerpool
 import (
 	"context"
 	"errors"
-	"reflect"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"testing"
 )
 
@@ -75,13 +76,13 @@ func Test_task_Process(t *testing.T) {
 
 			got := task.process(ctx)
 			if tt.want.Err != nil {
-				if !reflect.DeepEqual(got.Err, tt.want.Err) {
+				if !cmp.Equal(got.Err, tt.want.Err, cmpopts.EquateErrors()) {
 					t.Errorf("execute() = %v, wantError %v", got.Err, tt.want.Err)
 				}
 				return
 			}
 
-			if !reflect.DeepEqual(got, tt.want) {
+			if !cmp.Equal(got, tt.want) {
 				t.Errorf("execute() = %v, want %v", got, tt.want)
 			}
 		})

@@ -33,6 +33,7 @@ func Run(cfg *config.Cfg) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Services
+	// todo: слишком жёстко привязан конечный маршрут - а если потребуется несколько эндпойнтов опрашивать?
 	endpoint := "http://" + cfg.AccrualAddress + "/api/orders"
 	services := service.NewService(repos, endpoint)
 	go services.Polling.Run(ctx)

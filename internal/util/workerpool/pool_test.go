@@ -46,7 +46,6 @@ func TestWorkerPool(t *testing.T) {
 
 		case <-ctx.Done():
 			return
-		default:
 		}
 	}
 }
@@ -67,7 +66,6 @@ func TestWorkerPool_TimeOut(t *testing.T) {
 			}
 		case <-ctx.Done():
 			return
-		default:
 		}
 	}
 }
@@ -88,7 +86,6 @@ func TestWorkerPool_Cancel(t *testing.T) {
 			}
 		case <-ctx.Done():
 			return
-		default:
 		}
 	}
 }

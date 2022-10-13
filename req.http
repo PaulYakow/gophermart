@@ -42,7 +42,7 @@ Content-Type: application/json
 
 {
   "order": "346436439",
-  "sum": 100
+  "sum": 1.2345
 }
 
 ### withdraw request #2

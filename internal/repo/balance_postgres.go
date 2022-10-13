@@ -18,7 +18,7 @@ FROM balance
 WHERE user_id = $1;
 `
 	getBalanceByUser = `
-SELECT (user_id, "current", withdrawn)
+SELECT user_id, current, withdrawn
 FROM balance
 WHERE user_id = $1;
 `

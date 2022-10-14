@@ -29,13 +29,13 @@ func (h *Handler) loginUser(c *gin.Context) {
 	var input entity.User
 	if err := c.BindJSON(&input); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest) // Другой возможный вариант - c.AbortWithError
-		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
+		h.logger.Error(fmt.Errorf("login user: %w", err))
 		return
 	}
 
 	token, err := h.services.GenerateToken(input.Login, input.Password)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
+		h.logger.Error(fmt.Errorf("login user: %w", err))
 
 		if strings.Contains(err.Error(), "no rows") {
 			c.AbortWithStatus(http.StatusUnauthorized)

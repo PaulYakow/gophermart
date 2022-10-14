@@ -25,7 +25,7 @@ type Handler struct {
 func NewHandler(services *service.Service, logger logger.ILogger) *Handler {
 	return &Handler{
 		services: services,
-		logger:   logger,
+		logger:   logger.Named("handler"),
 	}
 }
 

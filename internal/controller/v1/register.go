@@ -1,8 +1,10 @@
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PaulYakow/gophermart/internal/entity"
+	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
@@ -29,18 +31,18 @@ func (h *Handler) registerUser(c *gin.Context) {
 	var user entity.User
 	if err := c.BindJSON(&user); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest) // Другой возможный вариант - c.AbortWithError
-		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
+		h.logger.Error(fmt.Errorf("register user: %w", err))
 		return
 	}
 
 	_, err := h.services.CreateUser(user)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - register user: %w", err))
 
-		if strings.Contains(err.Error(), "SQLSTATE 23505") {
-			// todo: Переделать на проверку ошибки
+		if errors.Is(err, repo.ErrDuplicateKey) {
+			h.logger.Error(fmt.Errorf("register user: login already exists"))
 			c.AbortWithStatus(http.StatusConflict)
 		} else {
+			h.logger.Error(fmt.Errorf("register user: %w", err))
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 
@@ -49,7 +51,7 @@ func (h *Handler) registerUser(c *gin.Context) {
 
 	token, err := h.services.GenerateToken(user.Login, user.Password)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - login user: %w", err))
+		h.logger.Error(fmt.Errorf("login user: %w", err))
 
 		if strings.Contains(err.Error(), "no rows") {
 			c.AbortWithStatus(http.StatusUnauthorized)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/PaulYakow/gophermart/internal/entity"
+	"github.com/PaulYakow/gophermart/internal/pkg/logger"
 	"github.com/PaulYakow/gophermart/internal/repo"
 )
 
@@ -34,13 +35,12 @@ type (
 	}
 )
 
-func NewService(repo *repo.Repo, pollingAddress string) *Service {
-	// todo: нет возможности вести логи - пробросить сюда логгер
+func NewService(repo *repo.Repo, logger logger.ILogger, pollingAddress string) *Service {
 	// todo: при рестарте сервиса реализовать перезапуск опроса тех заказов, статус которых не окончательный
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
 		IOrder:         NewOrderService(repo.IOrder),
 		IBalance:       NewBalanceService(repo.IBalance),
-		Polling:        NewPollService(repo.IOrder, pollingAddress),
+		Polling:        NewPollService(repo.IOrder, logger, pollingAddress),
 	}
 }

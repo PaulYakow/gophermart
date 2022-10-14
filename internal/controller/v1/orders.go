@@ -76,24 +76,24 @@ Content-Type: application/json
 */
 
 func (h *Handler) loadOrder(c *gin.Context) {
-	h.logger.Info("handler - request: %v", *c.Request)
+	h.logger.Info("request: %v", *c.Request)
 
 	if c.Request.Header.Get("Content-Type") != "text/plain" {
-		h.logger.Error(fmt.Errorf("handler - upload order: content-type not text/plain"))
+		h.logger.Error(fmt.Errorf("upload order: content-type not text/plain"))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	number, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - load order: invalid request body: %w", err))
+		h.logger.Error(fmt.Errorf("load order: invalid request body: %w", err))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	orderNumber, err := strconv.Atoi(string(number))
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - load order: cannot convert data in request body: %w", err))
+		h.logger.Error(fmt.Errorf("load order: cannot convert data in request body: %w", err))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -105,7 +105,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 
 	userID, ok := c.Get(userCtx)
 	if !ok {
-		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		h.logger.Error(fmt.Errorf("upload order: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -113,20 +113,20 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
 	userIDInOrder, err := h.services.CreateUploadedOrder(userID.(int), orderNumber)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - upload order: failed create in storage: %w", err))
+		h.logger.Error(fmt.Errorf("upload order: failed create in storage: %w", err))
 		return
 	}
 
 	if userIDInOrder == 0 {
 		h.services.Polling.AddToPoll(strconv.Itoa(orderNumber))
 
-		h.logger.Info("handler - upload order: order accepted")
+		h.logger.Info("upload order: order accepted")
 		c.Status(http.StatusAccepted)
 	} else if userIDInOrder == userID.(int) {
-		h.logger.Info("handler - upload order: order has already been loaded by this user")
+		h.logger.Info("upload order: order has already been loaded by this user")
 		c.Status(http.StatusOK)
 	} else {
-		h.logger.Info("handler - upload order: order has already been loaded by another user")
+		h.logger.Info("upload order: order has already been loaded by another user")
 		c.Status(http.StatusConflict)
 	}
 }
@@ -134,7 +134,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 func (h *Handler) getListOfOrders(c *gin.Context) {
 	userID, ok := c.Get(userCtx)
 	if !ok {
-		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		h.logger.Error(fmt.Errorf("upload order: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -144,7 +144,7 @@ func (h *Handler) getListOfOrders(c *gin.Context) {
 
 	uploadedOrders, err := h.services.GetUploadedOrders(ctx, userID.(int))
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - get uploaded orders: invalid request body: %w", err))
+		h.logger.Error(fmt.Errorf("get uploaded orders: invalid request body: %w", err))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -156,13 +156,13 @@ func (h *Handler) withdrawOrder(c *gin.Context) {
 	var withdraw WithdrawRequest
 	if err := c.BindJSON(&withdraw); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
-		h.logger.Error(fmt.Errorf("handler - register withdraw: %w", err))
+		h.logger.Error(fmt.Errorf("register withdraw: %w", err))
 		return
 	}
 
 	orderNumber, err := strconv.Atoi(string(withdraw.Order))
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - register withdraw: cannot convert data in request body: %w", err))
+		h.logger.Error(fmt.Errorf("register withdraw: cannot convert data in request body: %w", err))
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -174,14 +174,14 @@ func (h *Handler) withdrawOrder(c *gin.Context) {
 
 	userID, ok := c.Get(userCtx)
 	if !ok {
-		h.logger.Error(fmt.Errorf("handler - register withdraw: user id not found"))
+		h.logger.Error(fmt.Errorf("register withdraw: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
 	err = h.services.CreateWithdrawOrder(userID.(int), withdraw.Order, withdraw.Sum)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - register withdraw: failed create in storage: %w", err))
+		h.logger.Error(fmt.Errorf("register withdraw: failed create in storage: %w", err))
 
 		if errors.Is(err, repo.ErrNoFunds) {
 			c.AbortWithStatus(http.StatusPaymentRequired)

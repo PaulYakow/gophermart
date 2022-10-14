@@ -31,7 +31,7 @@ Content-Length: 0
 func (h *Handler) getBalance(c *gin.Context) {
 	userID, ok := c.Get(userCtx)
 	if !ok {
-		h.logger.Error(fmt.Errorf("handler - upload order: user id not found"))
+		h.logger.Error(fmt.Errorf("upload order: user id not found"))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
@@ -41,7 +41,7 @@ func (h *Handler) getBalance(c *gin.Context) {
 
 	balance, err := h.services.GetBalance(ctx, userID.(int))
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - get uploaded orders: invalid request body: %w", err))
+		h.logger.Error(fmt.Errorf("get uploaded orders: invalid request body: %w", err))
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}

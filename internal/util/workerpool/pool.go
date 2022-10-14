@@ -2,7 +2,6 @@ package workerpool
 
 import (
 	"context"
-	"fmt"
 )
 
 type Pool struct {
@@ -36,21 +35,17 @@ func (p *Pool) RunBackground(ctx context.Context) {
 
 	p.runBackground = make(chan struct{})
 	<-p.runBackground
-	fmt.Println("pool RunBackground() exit")
 }
 
 // Stop останавливает запущенных в фоне worker-ов
 func (p *Pool) Stop() {
-	fmt.Println("pool stop signal")
 	for idx := range p.workers {
 		p.workers[idx].Stop()
 	}
 
 	p.runBackground <- struct{}{}
-	fmt.Println("pool run background signal send")
 
 	close(p.results)
-	fmt.Println("pool Stop() exit")
 }
 
 func (p *Pool) Results() <-chan Result {

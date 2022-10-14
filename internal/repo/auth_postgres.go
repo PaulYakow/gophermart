@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"github.com/PaulYakow/gophermart/internal/entity"
 	"github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
+	"github.com/jackc/pgx"
 	"github.com/jmoiron/sqlx"
-	"log"
 	"time"
 )
-
-// todo: Named stmt
 
 const (
 	createUser = `
@@ -25,6 +23,7 @@ WHERE login=$1 AND password_hash=$2;
 `
 )
 
+// todo: add mutex
 type AuthPostgres struct {
 	db *v2.Postgre
 }
@@ -34,21 +33,19 @@ var (
 	stmtInitBalance *sqlx.Stmt
 )
 
-func NewAuthPostgres(db *v2.Postgre) *AuthPostgres {
+func NewAuthPostgres(db *v2.Postgre) (*AuthPostgres, error) {
 	var err error
 	stmtCreateUser, err = db.Preparex(createUser)
 	if err != nil {
-		log.Printf("repo - NewAuthPostgres stmtCreateUser prepare: %v", err)
+		return nil, fmt.Errorf("repo/auth - NewAuthPostgres stmtCreateUser prepare: %v", err)
 	}
 
 	stmtInitBalance, err = db.Preparex(createBalanceForUser)
 	if err != nil {
-		log.Printf("repo - NewAuthPostgres stmtInitBalance prepare: %v", err)
+		return nil, fmt.Errorf("repo/auth - NewAuthPostgres stmtInitBalance prepare: %v", err)
 	}
 
-	return &AuthPostgres{
-		db: db,
-	}
+	return &AuthPostgres{db: db}, nil
 }
 
 func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
@@ -57,7 +54,7 @@ func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
 
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return 0, fmt.Errorf("repo - start transaction: %w", err)
+		return 0, fmt.Errorf("repo/auth - start transaction: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -66,11 +63,15 @@ func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
 
 	var id int
 	if err = txStmtCreateUser.Get(&id, user.Login, user.Password); err != nil {
-		return 0, fmt.Errorf("repo - txStmtCreateUser: %w", err)
+		pqErr := err.(pgx.PgError)
+		if pqErr.Code == "23505" {
+			return 0, ErrDuplicateKey
+		}
+		return 0, fmt.Errorf("repo/auth - txStmtCreateUser: %w", err)
 	}
 
 	if _, err = txStmtInitBalance.Exec(id); err != nil {
-		return 0, fmt.Errorf("repo - txStmtInitBalance: %w", err)
+		return 0, fmt.Errorf("repo/auth - txStmtInitBalance: %w", err)
 	}
 
 	return id, tx.Commit()

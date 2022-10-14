@@ -14,14 +14,14 @@ const (
 func (h *Handler) userIdentity(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
-		h.logger.Error(fmt.Errorf("handler - user identity: empty auth header"))
+		h.logger.Error(fmt.Errorf("user identity: empty auth header"))
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
 	userID, err := h.services.ParseToken(header)
 	if err != nil {
-		h.logger.Error(fmt.Errorf("handler - user identity: %w", err))
+		h.logger.Error(fmt.Errorf("user identity: %w", err))
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}

@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/PaulYakow/gophermart/internal/pkg/logger"
 	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/PaulYakow/gophermart/internal/util/workerpool"
 	"github.com/imroc/req/v3"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -20,13 +20,16 @@ type PollResult struct {
 }
 
 type PollService struct {
-	repo       repo.IOrder
 	pool       *workerpool.Pool
+	repo       repo.IOrder
+	logger     logger.ILogger
 	httpclient *req.Client
 	endpoint   string
 }
 
-func NewPollService(repo repo.IOrder, endpoint string) *PollService {
+func NewPollService(repo repo.IOrder, logger logger.ILogger, endpoint string) *PollService {
+	pollingLogger := logger.Named("polling")
+
 	client := req.C().
 		SetTimeout(1 * time.Second).
 		SetCommonRetryCount(10).
@@ -39,7 +42,7 @@ func NewPollService(repo repo.IOrder, endpoint string) *PollService {
 					}
 				}
 			}
-			return 5 * time.Second
+			return 2 * time.Second
 		}).
 		SetCommonRetryCondition(func(resp *req.Response, err error) bool {
 			if resp.Response != nil {
@@ -47,11 +50,11 @@ func NewPollService(repo repo.IOrder, endpoint string) *PollService {
 				if resp.StatusCode == http.StatusOK && resp.GetHeader("Content-Type") == "application/json" {
 					err := resp.UnmarshalJson(&result)
 					if err != nil {
-						log.Println("PollService - CommonRetryCondition unmarshal error:", err)
+						pollingLogger.Error(fmt.Errorf("client - CommonRetryCondition unmarshal error: %w", err))
 						return true
 					}
 				}
-				log.Println("PollService - retry attempt: ", result)
+				pollingLogger.Info("client - retry attempt: ", result)
 
 				return err != nil ||
 					resp.StatusCode == http.StatusTooManyRequests ||
@@ -62,12 +65,13 @@ func NewPollService(repo repo.IOrder, endpoint string) *PollService {
 		}).
 		SetCommonRetryHook(func(resp *req.Response, err error) {
 			rq := resp.Request.RawRequest
-			log.Println("PollService - retry request:", rq.Method, rq.URL)
+			pollingLogger.Info("client - retry request: ", rq.Method, rq.URL)
 		})
 
 	return &PollService{
-		repo:       repo,
 		pool:       workerpool.NewPool(2, 10),
+		repo:       repo,
+		logger:     pollingLogger,
 		httpclient: client,
 		endpoint:   endpoint,
 	}
@@ -110,61 +114,52 @@ func (s *PollService) requestOrderInfo(ctx context.Context, args interface{}) (i
 		Get(s.endpoint + "/{number}")
 
 	if err != nil {
-		log.Println("PollService - requestOrderInfo error:", err)
-		log.Println("raw content:")
-		log.Println(resp.Dump()) // Record raw content when error occurs.
+		s.logger.Error(fmt.Errorf("requestOrderInfo - error: %w", err))
+		s.logger.Info("raw content: ", resp.Dump()) // Record raw content when error occurs.
 		return nil, err
 	}
 	//defer resp.Body.Close()
 
 	if resp.IsSuccess() { // Status code is between 200 and 299.
-		fmt.Printf("PollService - requestOrderInfo success: result=%v | code=%s\n", result, resp.Status)
+		s.logger.Info("requestOrderInfo - success: result=%v | code=%s\n", result, resp.Status)
 		return result, nil
 	}
 
 	// Unknown status code.
-	log.Println("PollService - requestOrderInfo unknown status:", resp.Status)
-	log.Println("raw content:")
-	log.Println(resp.Dump())
+	s.logger.Info("requestOrderInfo - unknown status:", resp.Status)
+	s.logger.Info("raw content: ", resp.Dump()) // Record raw content when error occurs.
 
 	return nil, nil
 }
 
 func (s *PollService) getResults(ctx context.Context) {
-	defer fmt.Println("PollService - getResults exiting")
-
 	for {
 		select {
 		case r, ok := <-s.pool.Results():
 			if !ok {
-				log.Println("PollService - getResults <-s.pool.Results(): ", ok)
+				s.logger.Info("getResults <-s.pool.Results(): ", ok)
 				return
 			}
-			log.Println("PollService - getResults: ", r)
-			/*
-				assert r.Value to PollResult type
-				if err -> notify about error
-				else -> send value to Results channel
-			*/
+			s.logger.Info("getResults: ", r)
+
 			if r.Err != nil {
-				log.Println("PollService - getResults r.Err: ", r.Err)
+				s.logger.Error(fmt.Errorf("getResults - r.Err: %w", r.Err))
 			}
 
 			result, ok := r.Value.(PollResult)
 			if !ok {
-				log.Println("PollService - getResults cannot convert to PollResult: ", result)
+				s.logger.Error(fmt.Errorf("getResults - cannot convert to PollResult: %v", result))
 				continue
 			}
 
 			if err := s.repo.UpdateUploadedOrder(result.Order, result.Status, result.Accrual); err != nil {
-				log.Println("PollService - getResults cannot update order: ", err)
+				s.logger.Error(fmt.Errorf("getResults - cannot update order: %w", err))
 				continue
 			}
-
-			log.Println("PollService - getResults update order success: ", result)
+			s.logger.Info("getResults - update upload order success")
 
 		case <-ctx.Done():
-			fmt.Printf("PollService - getResults context canceled: %v", ctx.Err())
+			s.logger.Info("getResults - context canceled: %v", ctx.Err())
 			s.pool.Stop()
 			return
 		}

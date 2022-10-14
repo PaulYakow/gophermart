@@ -8,7 +8,6 @@ import (
 	"github.com/PaulYakow/gophermart/internal/entity"
 	v2 "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
 	"github.com/jmoiron/sqlx"
-	"log"
 	"time"
 )
 
@@ -54,38 +53,39 @@ var (
 	stmtCreateWithdrawOrder *sqlx.Stmt
 )
 
+// todo: add mutex
 type OrderPostgres struct {
 	db *v2.Postgre
 }
 
-func NewOrderPostgres(db *v2.Postgre) *OrderPostgres {
+func NewOrderPostgres(db *v2.Postgre) (*OrderPostgres, error) {
 	var err error
 	stmtUpdateUploadedOrder, err = db.Preparex(updateUploadedOrder)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtUpdateUploadedOrder prepare: %v", err)
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtUpdateUploadedOrder prepare: %v", err)
 	}
 
 	stmtUpdateCurrentBalance, err = db.Preparex(updateCurrentBalance)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtUpdateCurrentBalance prepare: %v", err)
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtUpdateCurrentBalance prepare: %v", err)
 	}
 
 	stmtGetBalance, err = db.Preparex(getBalanceByUser)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtGetBalance prepare: %v", err)
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtGetBalance prepare: %v", err)
 	}
 
 	stmtCreateWithdrawOrder, err = db.Preparex(createWithdrawnOrder)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtCreateWithdrawOrder prepare: %v", err)
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtCreateWithdrawOrder prepare: %v", err)
 	}
 
 	stmtUpdateWithdrawBalance, err = db.Preparex(updateWithdrawBalance)
 	if err != nil {
-		log.Printf("repo - NewOrderPostgres stmtUpdateWithdrawBalance prepare: %v", err)
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtUpdateWithdrawBalance prepare: %v", err)
 	}
 
-	return &OrderPostgres{db: db}
+	return &OrderPostgres{db: db}, nil
 }
 
 func (r *OrderPostgres) CreateUploadedOrder(userID int, orderNumber string) (int, error) {
@@ -134,7 +134,6 @@ func (r *OrderPostgres) UpdateUploadedOrder(number string, status string, accrua
 		return fmt.Errorf("repo - txStmtUpdateBalance: %w", err)
 	}
 
-	log.Println("repo - update upload order success")
 	return tx.Commit()
 }
 
@@ -154,14 +153,13 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 
 	var balance entity.Balance
 	if err = txStmtGetBalance.Get(&balance, userID); err != nil {
-		return fmt.Errorf("repo - txStmtGetBalance_1: %w", err)
+		return fmt.Errorf("repo - txStmtGetBalance: %w", err)
 	}
 
 	if balance.Current-sum < 0 {
 		return ErrNoFunds
 	}
 
-	before := balance
 	if _, err = txStmtCreateWithdrawOrder.Exec(userID, orderNumber, sum); err != nil {
 		return fmt.Errorf("repo - txStmtCreateWithdrawOrder: %w", err)
 	}
@@ -170,11 +168,6 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 		return fmt.Errorf("repo - txStmtUpdateWithdrawBalance: %w", err)
 	}
 
-	if err = txStmtGetBalance.Get(&balance, userID); err != nil {
-		return fmt.Errorf("repo - txStmtGetBalance_2: %w", err)
-	}
-
-	log.Println("repo - update withdraw order success: before=", before, " | after=", balance)
 	return tx.Commit()
 }
 

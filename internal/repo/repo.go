@@ -58,7 +58,9 @@ ALTER TABLE withdraw_orders
         REFERENCES users (id)
 		ON DELETE CASCADE;
 
+CREATE INDEX ON users (login, password_hash);
 CREATE INDEX ON upload_orders (user_id);
+CREATE INDEX ON upload_orders (number);
 CREATE INDEX ON balance (user_id);
 CREATE INDEX ON withdraw_orders (user_id);
 `
@@ -82,7 +84,6 @@ type (
 		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
 	}
 
-	// todo: add mutex
 	Repo struct {
 		IAuthorization
 		IOrder
@@ -91,7 +92,7 @@ type (
 )
 
 func New(db *v2.Postgre) (*Repo, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := db.ExecContext(ctx, schema)
@@ -99,9 +100,19 @@ func New(db *v2.Postgre) (*Repo, error) {
 		return nil, fmt.Errorf("repo - New - create schema failed: %w", err)
 	}
 
+	authRepo, err := NewAuthPostgres(db)
+	if err != nil {
+		return nil, fmt.Errorf("repo - New - create repo/auth failed: %w", err)
+	}
+
+	orderRepo, err := NewOrderPostgres(db)
+	if err != nil {
+		return nil, fmt.Errorf("repo - New - create repo/order failed: %w", err)
+	}
+
 	return &Repo{
-		IAuthorization: NewAuthPostgres(db),
-		IOrder:         NewOrderPostgres(db),
+		IAuthorization: authRepo,
+		IOrder:         orderRepo,
 		IBalance:       NewBalancePostgres(db),
 	}, nil
 }

@@ -16,33 +16,33 @@ import (
 )
 
 func Run(cfg *config.Cfg) {
-	l := logger.New()
-	defer l.Exit()
+	appLogger := logger.New("app")
+	defer appLogger.Exit()
 
 	// Postgres storage
 	pg, err := postgres.New(cfg.Dsn)
 	if err != nil {
-		l.Fatal(fmt.Errorf("app - Run - failed to initialize db: %w", err))
+		appLogger.Fatal(fmt.Errorf("run - failed to initialize db: %w", err))
 	}
 	defer pg.Close()
 
 	repos, err := repo.New(pg)
 	if err != nil {
-		l.Fatal(fmt.Errorf("app - Run - repo.New: %w", err))
+		appLogger.Fatal(fmt.Errorf("run - repo.New: %w", err))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Services
-	// todo: слишком жёстко привязан конечный маршрут - а если потребуется несколько эндпойнтов опрашивать?
+	// todo: слишком жёстко привязан конечный маршрут - нет возможности опрашивать разные эндпойнты
 	endpoint := cfg.AccrualAddress + "/api/orders"
-	services := service.NewService(repos, endpoint)
+	services := service.NewService(repos, appLogger, endpoint)
 	go services.Polling.Run(ctx)
 
 	//HTTP server
-	handler := ctrl.NewHandler(services, l)
+	handler := ctrl.NewHandler(services, appLogger)
 	srv := httpserver.New(handler.InitRoutes(), httpserver.Address(cfg.Address))
 
-	l.Info("app - Run - params: a=%s | d=%s | r=%s",
+	appLogger.Info("run - params: a=%s | d=%s | r=%s",
 		cfg.Address, cfg.Dsn, cfg.AccrualAddress)
 
 	// Waiting signal
@@ -51,15 +51,15 @@ func Run(cfg *config.Cfg) {
 
 	select {
 	case s := <-interrupt:
-		l.Info("app - Run - signal: %v", s.String())
+		appLogger.Info("run - signal: %v", s.String())
 	case err := <-srv.Notify():
-		l.Error(fmt.Errorf("app - Run - Notify: %w", err))
+		appLogger.Error(fmt.Errorf("run - Notify: %w", err))
 	}
 
 	// Shutdown
 	cancel()
 	err = srv.Shutdown()
 	if err != nil {
-		l.Error(fmt.Errorf("app - Run - Shutdown: %w", err))
+		appLogger.Error(fmt.Errorf("run - Shutdown: %w", err))
 	}
 }

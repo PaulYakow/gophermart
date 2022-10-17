@@ -35,7 +35,11 @@ func Run(cfg *config.Cfg) {
 	// Services
 	services := service.NewService(repos, appLogger)
 	go services.Polling.Run(ctx, cfg.AccrualAddress)
-	services.Polling.AddBulkToPoll("/api/orders/", repos.NotProcessedOrders)
+
+	// process orders that has one of status (NEW, REGISTERED, PROCESSING)
+	if len(repos.NotProcessedOrders) > 0 {
+		services.Polling.AddBulkToPoll("/api/orders/", repos.NotProcessedOrders)
+	}
 
 	//HTTP server
 	handler := ctrl.NewHandler(services, appLogger)

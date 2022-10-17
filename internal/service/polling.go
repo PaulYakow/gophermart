@@ -125,10 +125,11 @@ func (s *PollService) requestOrderInfo(ctx context.Context, args interface{}) (i
 
 	var result PollResult
 	resp, err := s.httpclient.R().
-		SetPathParam("route", route).
 		SetResult(&result).
 		EnableDump().
-		Get(s.endpoint + "{route}")
+		Get(s.endpoint + route)
+
+	s.logger.Info("requestOrderInfo - request route: %s", s.endpoint+route)
 
 	if err != nil {
 		s.logger.Error(fmt.Errorf("requestOrderInfo - error: %w", err))

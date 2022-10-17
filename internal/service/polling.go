@@ -9,6 +9,7 @@ import (
 	"github.com/PaulYakow/gophermart/internal/util/workerpool"
 	"github.com/imroc/req/v3"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -96,7 +97,7 @@ func (s *PollService) AddSingleToPoll(route string) {
 			Metadata: nil,
 		},
 		s.requestOrderInfo,
-		route)
+		url.QueryEscape(route))
 	s.pool.AddTask(*task)
 }
 
@@ -110,7 +111,7 @@ func (s *PollService) AddBulkToPoll(route string, numbers []string) {
 				Metadata: nil,
 			},
 			ExecFn: s.requestOrderInfo,
-			Args:   route + number,
+			Args:   url.QueryEscape(route + number),
 		}
 	}
 

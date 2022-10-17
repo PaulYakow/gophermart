@@ -27,7 +27,7 @@ type PollService struct {
 	endpoint   string
 }
 
-func NewPollService(repo repo.IOrder, logger logger.ILogger, endpoint string) *PollService {
+func NewPollService(repo repo.IOrder, logger logger.ILogger) *PollService {
 	pollingLogger := logger.Named("polling")
 
 	client := req.C().
@@ -73,45 +73,62 @@ func NewPollService(repo repo.IOrder, logger logger.ILogger, endpoint string) *P
 		repo:       repo,
 		logger:     pollingLogger,
 		httpclient: client,
-		endpoint:   endpoint,
 	}
 }
 
-func (s *PollService) Run(ctx context.Context) {
+func (s *PollService) Run(ctx context.Context, endpoint string) {
+	s.endpoint = endpoint
 	go s.getResults(ctx)
 	s.pool.RunBackground(ctx)
 }
 
-func (s *PollService) AddToPoll(number string) {
+func (s *PollService) AddSingleToPoll(route string) {
 	/*
 		pool add task:
-			- Descriptor: ID = "<number>"| TType = ""| Metadata =
+			- Descriptor: ID = "<route>"| TType = ""| Metadata =
 			- ExecFn = launch http request (with multiple retry cond - default time & retry-after)? / check status: (INVALID, PROCESSED) -> return PollResult type, else -> wait & retry
-			- Args = number
+			- Args = route
 	*/
 	task := workerpool.NewTask(
 		workerpool.TaskDescriptor{
-			ID:       workerpool.TaskID(number),
+			ID:       workerpool.TaskID(route),
 			TType:    "",
 			Metadata: nil,
 		},
 		s.requestOrderInfo,
-		number)
+		route)
 	s.pool.AddTask(*task)
 }
 
+func (s *PollService) AddBulkToPoll(route string, numbers []string) {
+	tasks := make([]workerpool.Task, len(numbers))
+	for i, number := range numbers {
+		tasks[i] = workerpool.Task{
+			Descriptor: workerpool.TaskDescriptor{
+				ID:       workerpool.TaskID(route + number),
+				TType:    "anyType",
+				Metadata: nil,
+			},
+			ExecFn: s.requestOrderInfo,
+			Args:   route + number,
+		}
+	}
+
+	s.pool.GenerateFrom(tasks...)
+}
+
 func (s *PollService) requestOrderInfo(ctx context.Context, args interface{}) (interface{}, error) {
-	number, ok := args.(string)
+	route, ok := args.(string)
 	if !ok {
 		return nil, errors.New("PollService wrong argument type for requestOrderInfo")
 	}
 
 	var result PollResult
 	resp, err := s.httpclient.R().
-		SetPathParam("number", number).
+		SetPathParam("route", route).
 		SetResult(&result).
 		EnableDump().
-		Get(s.endpoint + "/{number}")
+		Get(s.endpoint + "{route}")
 
 	if err != nil {
 		s.logger.Error(fmt.Errorf("requestOrderInfo - error: %w", err))

@@ -88,6 +88,8 @@ type (
 		IAuthorization
 		IOrder
 		IBalance
+
+		NotProcessedOrders []string
 	}
 )
 
@@ -111,8 +113,9 @@ func New(db *v2.Postgre) (*Repo, error) {
 	}
 
 	return &Repo{
-		IAuthorization: authRepo,
-		IOrder:         orderRepo,
-		IBalance:       NewBalancePostgres(db),
+		IAuthorization:     authRepo,
+		IOrder:             orderRepo,
+		IBalance:           NewBalancePostgres(db),
+		NotProcessedOrders: orderRepo.NotProcessedOrders,
 	}, nil
 }

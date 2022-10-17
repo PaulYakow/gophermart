@@ -35,12 +35,11 @@ type (
 	}
 )
 
-func NewService(repo *repo.Repo, logger logger.ILogger, pollingAddress string) *Service {
-	// todo: при рестарте сервиса реализовать перезапуск опроса тех заказов, статус которых не окончательный
+func NewService(repo *repo.Repo, logger logger.ILogger) *Service {
 	return &Service{
 		IAuthorization: NewAuthService(repo.IAuthorization),
 		IOrder:         NewOrderService(repo.IOrder),
 		IBalance:       NewBalanceService(repo.IBalance),
-		Polling:        NewPollService(repo.IOrder, logger, pollingAddress),
+		Polling:        NewPollService(repo.IOrder, logger),
 	}
 }

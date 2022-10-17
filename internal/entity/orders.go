@@ -2,6 +2,8 @@ package entity
 
 import "time"
 
+//todo: Использовать разные объекты для JSON и БД (DTO?)
+
 type UploadOrder struct {
 	ID         int       `json:"-" db:"id"`
 	UserID     int       `json:"-" db:"user_id"`

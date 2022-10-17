@@ -118,7 +118,7 @@ func (h *Handler) loadOrder(c *gin.Context) {
 	}
 
 	if userIDInOrder == 0 {
-		h.services.Polling.AddToPoll(strconv.Itoa(orderNumber))
+		h.services.Polling.AddSingleToPoll("/api/orders/" + strconv.Itoa(orderNumber))
 
 		h.logger.Info("upload order: order accepted")
 		c.Status(http.StatusAccepted)

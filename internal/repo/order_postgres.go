@@ -30,6 +30,11 @@ SELECT number, COALESCE(status, '') AS status, COALESCE(accrual, 0) as accrual, 
 WHERE user_id = $1
 ORDER BY created_at DESC;
 `
+	getUploadedOrdersByStatus = `
+SELECT number
+FROM upload_orders
+WHERE status IN ('NEW', 'REGISTERED', 'PROCESSING');
+`
 	updateUploadedOrder = `
 UPDATE upload_orders
 SET status = $2,
@@ -56,6 +61,8 @@ var (
 // todo: add mutex
 type OrderPostgres struct {
 	db *v2.Postgre
+
+	NotProcessedOrders []string
 }
 
 func NewOrderPostgres(db *v2.Postgre) (*OrderPostgres, error) {
@@ -85,7 +92,16 @@ func NewOrderPostgres(db *v2.Postgre) (*OrderPostgres, error) {
 		return nil, fmt.Errorf("repo/order - NewOrderPostgres stmtUpdateWithdrawBalance prepare: %v", err)
 	}
 
-	return &OrderPostgres{db: db}, nil
+	var notProcessedOrders []string
+	err = db.Select(&notProcessedOrders, getUploadedOrdersByStatus)
+	if err != nil {
+		return nil, fmt.Errorf("repo/order - NewOrderPostgres select not processed orders: %v", err)
+	}
+
+	return &OrderPostgres{
+		db:                 db,
+		NotProcessedOrders: notProcessedOrders,
+	}, nil
 }
 
 func (r *OrderPostgres) CreateUploadedOrder(userID int, orderNumber string) (int, error) {

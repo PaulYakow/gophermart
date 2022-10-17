@@ -33,10 +33,9 @@ func Run(cfg *config.Cfg) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Services
-	// todo: слишком жёстко привязан конечный маршрут - нет возможности опрашивать разные эндпойнты
-	endpoint := cfg.AccrualAddress + "/api/orders"
-	services := service.NewService(repos, appLogger, endpoint)
-	go services.Polling.Run(ctx)
+	services := service.NewService(repos, appLogger)
+	go services.Polling.Run(ctx, cfg.AccrualAddress)
+	services.Polling.AddBulkToPoll("/api/orders/", repos.NotProcessedOrders)
 
 	//HTTP server
 	handler := ctrl.NewHandler(services, appLogger)

@@ -13,7 +13,7 @@ type AuthConfig struct {
 func NewAuthConfig() (*AuthConfig, error) {
 	cfg := &AuthConfig{}
 
-	err := cleanenv.ReadEnv(cfg)
+	err := cleanenv.ReadConfig("./config/auth.env", cfg)
 	if err != nil {
 		return nil, err
 	}

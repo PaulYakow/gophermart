@@ -32,7 +32,7 @@ todo*
 log.json
 
 # env files
-*.env
+app.env
 
 # docker files
 pg_data

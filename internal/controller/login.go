@@ -29,8 +29,8 @@ Content-Type: application/json
 func (h *Handler) loginUser(c *gin.Context) {
 	loginRequest, ok := c.Get(loginUserReqKey)
 	if !ok {
-		h.logger.Error(fmt.Errorf("register: user not found"))
-		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("register: user not found")))
+		h.logger.Error(fmt.Errorf("login user: user not found"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("login user: user not found")))
 		return
 	}
 	user := loginRequest.(entity.UserDTO)

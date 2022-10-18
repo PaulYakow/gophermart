@@ -1,11 +1,12 @@
-package v1
+package controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PaulYakow/gophermart/internal/entity"
+	"github.com/PaulYakow/gophermart/internal/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
 /*
@@ -26,26 +27,25 @@ Content-Type: application/json
 */
 
 func (h *Handler) loginUser(c *gin.Context) {
-	var input entity.User
-	if err := c.BindJSON(&input); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest) // Другой возможный вариант - c.AbortWithError
-		h.logger.Error(fmt.Errorf("login user: %w", err))
+	loginRequest, ok := c.Get(loginUserReqKey)
+	if !ok {
+		h.logger.Error(fmt.Errorf("register: user not found"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("register: user not found")))
 		return
 	}
+	user := loginRequest.(entity.UserDTO)
 
-	token, err := h.services.GenerateToken(input.Login, input.Password)
+	userID, err := h.services.GetUser(user.Login, user.Password)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("login user: %w", err))
 
-		if strings.Contains(err.Error(), "no rows") {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		} else {
-			c.AbortWithStatus(http.StatusInternalServerError) // Другой возможный вариант - c.AbortWithError
+		if errors.Is(err, service.ErrLoginNotExist) || errors.Is(err, service.ErrMismatchPassword) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+			return
 		}
-
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	c.Header(authorizationHeader, token)
-	c.Status(http.StatusOK)
+	c.Set(userIDKey, userID)
 }

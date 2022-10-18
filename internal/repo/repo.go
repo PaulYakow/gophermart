@@ -18,70 +18,50 @@ CREATE TABLE IF NOT EXISTS users
 
 CREATE TABLE IF NOT EXISTS upload_orders
 (
-    id          SERIAL PRIMARY KEY,
-    user_id		INT NOT NULL,
     number      VARCHAR UNIQUE,
     status      VARCHAR,
     accrual     NUMERIC,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    user_id		INT REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS balance
 (
-    id          SERIAL PRIMARY KEY,
-    user_id		INT NOT NULL,
+    user_id		INT REFERENCES users (id) ON DELETE CASCADE,
     current     NUMERIC,
     withdrawn	NUMERIC
 );
 
 CREATE TABLE IF NOT EXISTS withdraw_orders
 (
-    id          SERIAL PRIMARY KEY,
-    user_id		INT NOT NULL,
+    user_id		INT REFERENCES users (id) ON DELETE CASCADE,
     number      VARCHAR UNIQUE,
     sum			NUMERIC,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE upload_orders
-    ADD FOREIGN KEY (user_id)
-        REFERENCES users (id)
-        ON DELETE CASCADE;
-
-ALTER TABLE balance
-    ADD FOREIGN KEY (user_id)
-        REFERENCES users (id)
-		ON DELETE CASCADE;
-
-ALTER TABLE withdraw_orders
-    ADD FOREIGN KEY (user_id)
-        REFERENCES users (id)
-		ON DELETE CASCADE;
-
-CREATE INDEX ON users (login, password_hash);
 CREATE INDEX ON upload_orders (user_id);
-CREATE INDEX ON upload_orders (number);
 CREATE INDEX ON balance (user_id);
 CREATE INDEX ON withdraw_orders (user_id);
 `
 
 type (
 	IAuthorization interface {
-		CreateUser(user entity.User) (int, error)
-		GetUser(login, password string) (entity.User, error)
+		CreateUser(login, passwordHash string) (int, error)
+		GetUser(login string) (entity.UserDAO, error)
 	}
 
 	IOrder interface {
 		CreateUploadedOrder(userID int, orderNumber string) (int, error)
-		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error)
+		GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrderDAO, error)
 		UpdateUploadedOrder(number string, status string, accrual float32) error
 
 		CreateWithdrawOrder(userID int, orderNumber string, sum float32) error
-		GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error)
+		GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrderDAO, error)
 	}
 
 	IBalance interface {
-		GetBalance(ctx context.Context, userID int) (entity.Balance, error)
+		GetBalance(ctx context.Context, userID int) (entity.BalanceDAO, error)
 	}
 
 	Repo struct {

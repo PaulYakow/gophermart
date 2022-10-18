@@ -1,78 +1,74 @@
 package service
 
 import (
-	"crypto/sha256"
-	"errors"
 	"fmt"
-	"github.com/PaulYakow/gophermart/internal/entity"
+	"github.com/PaulYakow/gophermart/config"
 	"github.com/PaulYakow/gophermart/internal/repo"
-	"github.com/golang-jwt/jwt/v4"
-	"time"
-)
-
-const (
-	salt       = "palz927wksm3480mncxbvsdtyu"
-	tokenTTL   = 12 * time.Hour
-	signingKey = "jhgas765djhdghf6w3jgh"
+	"github.com/PaulYakow/gophermart/internal/util"
+	"github.com/PaulYakow/gophermart/internal/util/token"
 )
 
 type AuthService struct {
-	repo repo.IAuthorization
+	cfg        config.AuthConfig
+	repo       repo.IAuthorization
+	tokenMaker token.IMaker
 }
 
-type tokenClaims struct {
-	jwt.RegisteredClaims
-	UserID int `json:"user_id"`
-}
-
-func NewAuthService(repo repo.IAuthorization) *AuthService {
-	return &AuthService{repo: repo}
-}
-
-func (s *AuthService) CreateUser(user entity.User) (int, error) {
-	user.Password = hashPassword(user.Password)
-	return s.repo.CreateUser(user)
-}
-
-func (s *AuthService) GenerateToken(login, password string) (string, error) {
-	user, err := s.repo.GetUser(login, hashPassword(password))
+func NewAuthService(repo repo.IAuthorization) (*AuthService, error) {
+	cfg, err := config.LoadAuthConfig()
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("cannot create config: %w", err)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-		user.ID,
-	})
+	tokenMaker, err := token.NewPasetoMaker(cfg.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
 
-	return token.SignedString([]byte(signingKey))
+	return &AuthService{
+		cfg:        cfg,
+		repo:       repo,
+		tokenMaker: tokenMaker,
+	}, nil
 }
 
-func (s *AuthService) ParseToken(accessToken string) (int, error) {
-	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
-		}
-		return []byte(signingKey), nil
-	})
-
+func (s *AuthService) CreateUser(login, password string) (int, error) {
+	passwordHash, err := util.HashPassword(password)
 	if err != nil {
 		return 0, err
 	}
 
-	claims, ok := token.Claims.(*tokenClaims)
-	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
-	}
-
-	return claims.UserID, nil
+	return s.repo.CreateUser(login, passwordHash)
 }
 
-func hashPassword(password string) string {
-	hash := sha256.New()
-	hash.Write([]byte(password))
-	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
+func (s *AuthService) GetUser(login, password string) (int, error) {
+	user, err := s.repo.GetUser(login)
+	if err != nil {
+		return 0, ErrLoginNotExist
+	}
+
+	err = util.CheckPassword(password, user.PasswordHash)
+	if err != nil {
+		return 0, ErrMismatchPassword
+	}
+
+	return user.ID, nil
+}
+
+func (s *AuthService) GenerateToken(userID int) (string, error) {
+	authToken, err := s.tokenMaker.CreateToken(userID, s.cfg.AccessTokenDuration)
+	if err != nil {
+		return "", err
+	}
+
+	return authToken, nil
+}
+
+func (s *AuthService) ParseToken(accessToken string) (int, error) {
+	payload, err := s.tokenMaker.VerifyToken(accessToken)
+	if err != nil {
+		return 0, err
+	}
+
+	return payload.UserID, nil
 }

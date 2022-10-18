@@ -17,9 +17,9 @@ VALUES ($1, $2)
 RETURNING id;
 `
 	getUser = `
-SELECT id
+SELECT *
 FROM users
-WHERE login=$1 AND password_hash=$2;
+WHERE login=$1;
 `
 )
 
@@ -48,7 +48,7 @@ func NewAuthPostgres(db *v2.Postgre) (*AuthPostgres, error) {
 	return &AuthPostgres{db: db}, nil
 }
 
-func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
+func (r *AuthPostgres) CreateUser(login, passwordHash string) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -62,7 +62,7 @@ func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
 	txStmtInitBalance := tx.StmtxContext(ctx, stmtInitBalance)
 
 	var id int
-	if err = txStmtCreateUser.Get(&id, user.Login, user.Password); err != nil {
+	if err = txStmtCreateUser.Get(&id, login, passwordHash); err != nil {
 		pqErr := err.(pgx.PgError)
 		if pqErr.Code == "23505" {
 			return 0, ErrDuplicateKey
@@ -77,8 +77,8 @@ func (r *AuthPostgres) CreateUser(user entity.User) (int, error) {
 	return id, tx.Commit()
 }
 
-func (r *AuthPostgres) GetUser(login, password string) (entity.User, error) {
-	var user entity.User
-	err := r.db.Get(&user, getUser, login, password)
+func (r *AuthPostgres) GetUser(login string) (entity.UserDAO, error) {
+	var user entity.UserDAO
+	err := r.db.Get(&user, getUser, login)
 	return user, err
 }

@@ -1,4 +1,4 @@
-package v1
+package controller
 
 import (
 	"context"
@@ -33,10 +33,10 @@ Content-Length: 0
 */
 
 func (h *Handler) withdrawInfo(c *gin.Context) {
-	userID, ok := c.Get(userCtx)
+	userID, ok := c.Get(userIDKey)
 	if !ok {
 		h.logger.Error(fmt.Errorf("upload order: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("upload order: user id not found")))
 		return
 	}
 
@@ -46,7 +46,7 @@ func (h *Handler) withdrawInfo(c *gin.Context) {
 	withdrawOrders, err := h.services.GetWithdrawOrders(ctx, userID.(int))
 	if err != nil {
 		h.logger.Error(fmt.Errorf("get uploaded orders: invalid request body: %w", err))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 

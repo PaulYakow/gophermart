@@ -1,9 +1,10 @@
-package v1
+package controller
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/PaulYakow/gophermart/internal/entity"
 	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -80,40 +81,42 @@ func (h *Handler) loadOrder(c *gin.Context) {
 
 	if c.Request.Header.Get("Content-Type") != "text/plain" {
 		h.logger.Error(fmt.Errorf("upload order: content-type not text/plain"))
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(fmt.Errorf("upload order: content-type not text/plain")))
 		return
 	}
 
 	number, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("load order: invalid request body: %w", err))
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	orderNumber, err := strconv.Atoi(string(number))
 	if err != nil {
 		h.logger.Error(fmt.Errorf("load order: cannot convert data in request body: %w", err))
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	if !checkOrderNumber(orderNumber) {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		h.logger.Error(fmt.Errorf("upload order: order number not valid"))
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, errorResponse(fmt.Errorf("upload order: order number not valid")))
 		return
 	}
 
-	userID, ok := c.Get(userCtx)
+	userID, ok := c.Get(userIDKey)
 	if !ok {
 		h.logger.Error(fmt.Errorf("upload order: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("upload order: user id not found")))
 		return
 	}
 
-	//h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
+	h.logger.Info("user_id: %v | order number: %v", userID.(int), orderNumber)
 	userIDInOrder, err := h.services.CreateUploadedOrder(userID.(int), orderNumber)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("upload order: failed create in storage: %w", err))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
@@ -132,10 +135,10 @@ func (h *Handler) loadOrder(c *gin.Context) {
 }
 
 func (h *Handler) getListOfOrders(c *gin.Context) {
-	userID, ok := c.Get(userCtx)
+	userID, ok := c.Get(userIDKey)
 	if !ok {
 		h.logger.Error(fmt.Errorf("upload order: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("upload order: user id not found")))
 		return
 	}
 
@@ -145,7 +148,7 @@ func (h *Handler) getListOfOrders(c *gin.Context) {
 	uploadedOrders, err := h.services.GetUploadedOrders(ctx, userID.(int))
 	if err != nil {
 		h.logger.Error(fmt.Errorf("get uploaded orders: invalid request body: %w", err))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
@@ -153,29 +156,29 @@ func (h *Handler) getListOfOrders(c *gin.Context) {
 }
 
 func (h *Handler) withdrawOrder(c *gin.Context) {
-	var withdraw WithdrawRequest
+	var withdraw entity.WithdrawOrderDTO
 	if err := c.BindJSON(&withdraw); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		h.logger.Error(fmt.Errorf("register withdraw: %w", err))
 		return
 	}
 
-	orderNumber, err := strconv.Atoi(string(withdraw.Order))
+	orderNumber, err := strconv.Atoi(withdraw.Order)
 	if err != nil {
 		h.logger.Error(fmt.Errorf("register withdraw: cannot convert data in request body: %w", err))
-		c.AbortWithStatus(http.StatusBadRequest)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	if !checkOrderNumber(orderNumber) {
-		c.AbortWithStatus(http.StatusUnprocessableEntity)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, errorResponse(fmt.Errorf("upload order: order number not valid")))
 		return
 	}
 
-	userID, ok := c.Get(userCtx)
+	userID, ok := c.Get(userIDKey)
 	if !ok {
 		h.logger.Error(fmt.Errorf("register withdraw: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("register withdraw: user id not found")))
 		return
 	}
 
@@ -184,10 +187,10 @@ func (h *Handler) withdrawOrder(c *gin.Context) {
 		h.logger.Error(fmt.Errorf("register withdraw: failed create in storage: %w", err))
 
 		if errors.Is(err, repo.ErrNoFunds) {
-			c.AbortWithStatus(http.StatusPaymentRequired)
+			c.AbortWithStatusJSON(http.StatusPaymentRequired, errorResponse(err))
 			return
 		}
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 

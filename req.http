@@ -1,42 +1,42 @@
 ### register user
-POST http://localhost:8081/api/user/register
+POST {{run_address}}/api/user/register
 Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
 {
-  "login": "User_0",
-  "password": "qwerty"
+  "login": "User_1",
+  "password": "secret"
 }
 
 ### login user
-POST http://localhost:8081/api/user/login
+POST {{run_address}}/api/user/login
 Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
 {
-  "login": "Abrahm",
-  "password": "sarah085"
+  "login": "User_1",
+  "password": "secret1"
 }
 
 ### load order
-POST http://localhost:8081/api/user/orders
+POST {{run_address}}/api/user/orders
 Accept-Encoding: gzip, deflate, br
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjYwNDMzNDIsImlhdCI6MTY2NjAwMDE0MiwidXNlcl9pZCI6NH0.m3SJc-jMS-KpkrQYgYCmvMsjc0iQz4HqTstZ3jYBStQ
+Authorization: {{auth_header}}
 Content-Type: text/plain
 
 9278923470
 
 ### get uploaded orders
-GET http://localhost:8081/api/user/orders
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3ODQ1MTcsImlhdCI6MTY2NTc0MTMxNywidXNlcl9pZCI6NH0.VRdSbepJ1PDRQXcjbxPL6ey-qodWQiUaHTb8dg5nX7Y
+GET {{run_address}}/api/user/orders
+Authorization: {{auth_header}}
 
 ### get balance
 GET http://localhost:8081/api/user/balance
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3ODQ1MTcsImlhdCI6MTY2NTc0MTMxNywidXNlcl9pZCI6NH0.VRdSbepJ1PDRQXcjbxPL6ey-qodWQiUaHTb8dg5nX7Y
+Authorization: {{auth_header}}
 
 ### withdraw request #1
-POST http://localhost:8081/api/user/balance/withdraw
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+POST {{run_address}}/api/user/balance/withdraw
+Authorization: {{auth_header}}
 Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
@@ -46,8 +46,8 @@ Content-Type: application/json
 }
 
 ### withdraw request #2
-POST http://localhost:8081/api/user/balance/withdraw
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+POST {{run_address}}/api/user/balance/withdraw
+Authorization: {{auth_header}}
 Accept-Encoding: gzip, deflate, br
 Content-Type: application/json
 
@@ -57,5 +57,5 @@ Content-Type: application/json
 }
 
 ### get withdraw orders
-GET http://localhost:8081/api/user/withdrawals
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NjU3MDgxNjIsImlhdCI6MTY2NTY2NDk2MiwidXNlcl9pZCI6MjF9.fQ2HyZTOCys-TR2fHfRGMGqFLGHaXrDO2uhAFlYTd3s
+GET {{run_address}}/api/user/withdrawals
+Authorization: {{auth_header}}

@@ -44,8 +44,8 @@ func NewBalancePostgres(db *v2.Postgre) *BalancePostgres {
 	return &BalancePostgres{db: db}
 }
 
-func (r *BalancePostgres) GetBalance(ctx context.Context, userID int) (entity.Balance, error) {
-	var balance entity.Balance
+func (r *BalancePostgres) GetBalance(ctx context.Context, userID int) (entity.BalanceDAO, error) {
+	var balance entity.BalanceDAO
 	err := r.db.GetContext(ctx, &balance, getBalanceByUser, userID)
 	return balance, err
 }

@@ -1,4 +1,4 @@
-package v1
+package controller
 
 import (
 	"context"
@@ -29,10 +29,10 @@ Content-Length: 0
 */
 
 func (h *Handler) getBalance(c *gin.Context) {
-	userID, ok := c.Get(userCtx)
+	userID, ok := c.Get(userIDKey)
 	if !ok {
-		h.logger.Error(fmt.Errorf("upload order: user id not found"))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		h.logger.Error(fmt.Errorf("get balance: user id not found"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("get balance: user id not found")))
 		return
 	}
 
@@ -42,14 +42,9 @@ func (h *Handler) getBalance(c *gin.Context) {
 	balance, err := h.services.GetBalance(ctx, userID.(int))
 	if err != nil {
 		h.logger.Error(fmt.Errorf("get uploaded orders: invalid request body: %w", err))
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	c.JSON(http.StatusOK, balance)
-}
-
-type WithdrawRequest struct {
-	Order string  `json:"order" db:"number"`
-	Sum   float32 `json:"sum" db:"sum"`
 }

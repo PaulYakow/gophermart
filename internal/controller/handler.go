@@ -1,4 +1,4 @@
-package v1
+package controller
 
 import (
 	"github.com/PaulYakow/gophermart/internal/pkg/logger"
@@ -39,18 +39,25 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 	root := handler.Group(rootRoute)
 	{
-		root.POST(registerRoute, h.registerUser)
-		root.POST(loginRoute, h.loginUser)
-
-		auth := root.Group("/").Use(h.userIdentity)
+		auth := root.Group("/").Use(h.userAuthentication)
 		{
-			auth.POST(ordersRoute, h.loadOrder)
-			auth.GET(ordersRoute, h.getListOfOrders)
-			auth.GET(balanceRoute, h.getBalance)
-			auth.POST(withdrawRoute, h.withdrawOrder)
-			auth.GET(withdrawalsRoute, h.withdrawInfo)
+			auth.POST(registerRoute, h.registerUser)
+			auth.POST(loginRoute, h.loginUser)
+		}
+
+		requireAuth := root.Group("/").Use(h.userIdentity)
+		{
+			requireAuth.POST(ordersRoute, h.loadOrder)
+			requireAuth.GET(ordersRoute, h.getListOfOrders)
+			requireAuth.GET(balanceRoute, h.getBalance)
+			requireAuth.POST(withdrawRoute, h.withdrawOrder)
+			requireAuth.GET(withdrawalsRoute, h.withdrawInfo)
 		}
 	}
 
 	return handler
+}
+
+func errorResponse(err error) gin.H {
+	return gin.H{"error": err.Error()}
 }

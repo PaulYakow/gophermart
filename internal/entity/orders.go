@@ -2,21 +2,34 @@ package entity
 
 import "time"
 
-//todo: Использовать разные объекты для JSON и БД (DTO?)
-
-type UploadOrder struct {
-	ID         int       `json:"-" db:"id"`
-	UserID     int       `json:"-" db:"user_id"`
-	Number     string    `json:"number" db:"number"`
-	Status     string    `json:"status,omitempty" db:"status,omitempty"`
-	Accrual    float32   `json:"accrual,omitempty" db:"accrual,omitempty"`
-	UploadedAt time.Time `json:"uploaded_at,omitempty" db:"created_at,omitempty"`
+// UploadOrderDTO - object for API
+type UploadOrderDTO struct {
+	Number     string    `json:"number"`
+	Status     string    `json:"status,omitempty"`
+	Accrual    float32   `json:"accrual,omitempty"`
+	UploadedAt time.Time `json:"uploaded_at,omitempty"`
 }
 
-type WithdrawOrder struct {
-	ID          int       `json:"-" db:"id"`
-	UserID      int       `json:"-" db:"user_id"`
-	Order       string    `json:"order" db:"number"`
-	Sum         float32   `json:"sum" db:"sum"`
-	ProcessedAt time.Time `json:"processed_at" db:"created_at"`
+// UploadOrderDAO - object for database
+type UploadOrderDAO struct {
+	Number    string    `db:"number"`
+	Status    string    `db:"status,omitempty"`
+	Accrual   float32   `db:"accrual,omitempty"`
+	CreatedAt time.Time `db:"created_at,omitempty"`
+	UserID    int       `db:"user_id"`
+}
+
+// WithdrawOrderDTO - object for API
+type WithdrawOrderDTO struct {
+	Order       string    `json:"order"`
+	Sum         float32   `json:"sum"`
+	ProcessedAt time.Time `json:"processed_at,omitempty"`
+}
+
+// WithdrawOrderDAO - object for database
+type WithdrawOrderDAO struct {
+	Number    string    `db:"number"`
+	Sum       float32   `db:"sum"`
+	CreatedAt time.Time `db:"created_at,omitempty"`
+	UserID    int       `db:"user_id"`
 }

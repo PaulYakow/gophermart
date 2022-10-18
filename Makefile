@@ -6,3 +6,6 @@ test_coverage:
 
 run_accrual:
 	./cmd/accrual/accrual.exe
+
+lint:
+	golangci-lint run

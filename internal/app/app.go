@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/PaulYakow/gophermart/config"
-	ctrl "github.com/PaulYakow/gophermart/internal/controller/v1"
+	"github.com/PaulYakow/gophermart/internal/controller"
 	"github.com/PaulYakow/gophermart/internal/pkg/httpserver"
 	"github.com/PaulYakow/gophermart/internal/pkg/logger"
 	postgres "github.com/PaulYakow/gophermart/internal/pkg/postgres/v2"
@@ -22,18 +22,22 @@ func Run(cfg *config.Cfg) {
 	// Postgres storage
 	pg, err := postgres.New(cfg.Dsn)
 	if err != nil {
-		appLogger.Fatal(fmt.Errorf("run - failed to initialize db: %w", err))
+		appLogger.Fatal(fmt.Errorf("run - cannot connect to db: %w", err))
 	}
 	defer pg.Close()
 
 	repos, err := repo.New(pg)
 	if err != nil {
-		appLogger.Fatal(fmt.Errorf("run - repo.New: %w", err))
+		appLogger.Fatal(fmt.Errorf("run - cannot create repo: %w", err))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	// Services
-	services := service.NewService(repos, appLogger)
+	services, err := service.NewService(repos, appLogger)
+	if err != nil {
+		appLogger.Fatal(fmt.Errorf("run - cannot create services: %w", err))
+	}
+
 	go services.Polling.Run(ctx, cfg.AccrualAddress)
 
 	// process orders that has one of status (NEW, REGISTERED, PROCESSING)
@@ -42,7 +46,7 @@ func Run(cfg *config.Cfg) {
 	}
 
 	//HTTP server
-	handler := ctrl.NewHandler(services, appLogger)
+	handler := controller.NewHandler(services, appLogger)
 	srv := httpserver.New(handler.InitRoutes(), httpserver.Address(cfg.Address))
 
 	appLogger.Info("run - params: a=%s | d=%s | r=%s",

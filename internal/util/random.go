@@ -12,8 +12,8 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func RandomInt(min, max int64) int64 {
-	return min + rand.Int63n(max-min+1)
+func RandomInt(min, max int) int {
+	return min + int(rand.Int63n(int64(max-min+1)))
 }
 
 func RandomString(n int) string {
@@ -29,9 +29,9 @@ func RandomString(n int) string {
 }
 
 func RandomLogin() string {
-	return RandomString(int(RandomInt(6, 12)))
+	return RandomString(RandomInt(6, 12))
 }
 
 func RandomPassword() string {
-	return RandomString(int(RandomInt(8, 24)))
+	return RandomString(RandomInt(8, 24))
 }

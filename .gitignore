@@ -29,7 +29,7 @@ todo*
 *.txt
 
 # log files
-log*
+log.json
 
 # env files
 *.env
@@ -39,3 +39,6 @@ pg_data
 
 # schema files
 schema
+
+# env for http requests
+/http-client.private.env.json

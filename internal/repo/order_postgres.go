@@ -116,8 +116,8 @@ func (r *OrderPostgres) CreateUploadedOrder(userID int, orderNumber string) (int
 	return userIDOut, nil
 }
 
-func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrder, error) {
-	var result []entity.UploadOrder
+func (r *OrderPostgres) GetUploadedOrders(ctx context.Context, userID int) ([]entity.UploadOrderDAO, error) {
+	var result []entity.UploadOrderDAO
 
 	ctxInner, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -167,7 +167,7 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 	txStmtCreateWithdrawOrder := tx.StmtxContext(ctx, stmtCreateWithdrawOrder)
 	txStmtUpdateWithdrawBalance := tx.StmtxContext(ctx, stmtUpdateWithdrawBalance)
 
-	var balance entity.Balance
+	var balance entity.BalanceDAO
 	if err = txStmtGetBalance.Get(&balance, userID); err != nil {
 		return fmt.Errorf("repo - txStmtGetBalance: %w", err)
 	}
@@ -187,8 +187,8 @@ func (r *OrderPostgres) CreateWithdrawOrder(userID int, orderNumber string, sum 
 	return tx.Commit()
 }
 
-func (r *OrderPostgres) GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrder, error) {
-	var result []entity.WithdrawOrder
+func (r *OrderPostgres) GetWithdrawOrders(ctx context.Context, userID int) ([]entity.WithdrawOrderDAO, error) {
+	var result []entity.WithdrawOrderDAO
 
 	ctxInner, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

@@ -1,4 +1,4 @@
-package v1
+package controller
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"github.com/PaulYakow/gophermart/internal/repo"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 )
 
 /*
@@ -28,40 +27,26 @@ Content-Type: application/json
 */
 
 func (h *Handler) registerUser(c *gin.Context) {
-	var user entity.User
-	if err := c.BindJSON(&user); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest) // Другой возможный вариант - c.AbortWithError
-		h.logger.Error(fmt.Errorf("register user: %w", err))
+	loginRequest, ok := c.Get(loginUserReqKey)
+	if !ok {
+		h.logger.Error(fmt.Errorf("register: user not found"))
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("register: user not found")))
 		return
 	}
+	user := loginRequest.(entity.UserDTO)
 
-	_, err := h.services.CreateUser(user)
+	userID, err := h.services.CreateUser(user.Login, user.Password)
 	if err != nil {
-
 		if errors.Is(err, repo.ErrDuplicateKey) {
-			h.logger.Error(fmt.Errorf("register user: login already exists"))
-			c.AbortWithStatus(http.StatusConflict)
+			h.logger.Error(fmt.Errorf("register: login already exists"))
+			c.AbortWithStatusJSON(http.StatusConflict, errorResponse(err))
 		} else {
 			h.logger.Error(fmt.Errorf("register user: %w", err))
-			c.AbortWithStatus(http.StatusInternalServerError)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err))
 		}
 
 		return
 	}
 
-	token, err := h.services.GenerateToken(user.Login, user.Password)
-	if err != nil {
-		h.logger.Error(fmt.Errorf("login user: %w", err))
-
-		if strings.Contains(err.Error(), "no rows") {
-			c.AbortWithStatus(http.StatusUnauthorized)
-		} else {
-			c.AbortWithStatus(http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	c.Header(authorizationHeader, token)
-	c.Status(http.StatusOK)
+	c.Set(userIDKey, userID)
 }

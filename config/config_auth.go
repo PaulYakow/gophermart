@@ -1,25 +1,22 @@
 package config
 
 import (
-	"github.com/spf13/viper"
+	"github.com/ilyakaznacheev/cleanenv"
 	"time"
 )
 
 type AuthConfig struct {
-	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
-	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	TokenSymmetricKey   string        `env:"TOKEN_SYMMETRIC_KEY"`
+	AccessTokenDuration time.Duration `env:"ACCESS_TOKEN_DURATION"`
 }
 
-func LoadAuthConfig() (config AuthConfig, err error) {
-	viper.SetConfigFile("./config/.env")
+func NewAuthConfig() (*AuthConfig, error) {
+	cfg := &AuthConfig{}
 
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
+	err := cleanenv.ReadEnv(cfg)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	err = viper.Unmarshal(&config)
-	return
+	return cfg, nil
 }

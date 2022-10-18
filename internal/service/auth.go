@@ -15,7 +15,7 @@ type AuthService struct {
 }
 
 func NewAuthService(repo repo.IAuthorization) (*AuthService, error) {
-	cfg, err := config.LoadAuthConfig()
+	cfg, err := config.NewAuthConfig()
 	if err != nil {
 		return nil, fmt.Errorf("cannot create config: %w", err)
 	}
@@ -26,7 +26,7 @@ func NewAuthService(repo repo.IAuthorization) (*AuthService, error) {
 	}
 
 	return &AuthService{
-		cfg:        cfg,
+		cfg:        *cfg,
 		repo:       repo,
 		tokenMaker: tokenMaker,
 	}, nil

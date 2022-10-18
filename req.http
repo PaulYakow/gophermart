@@ -15,7 +15,7 @@ Content-Type: application/json
 
 {
   "login": "User_1",
-  "password": "secret1"
+  "password": "secret"
 }
 
 ### load order
